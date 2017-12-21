@@ -1,0 +1,13 @@
+opam-version: "1.2"
+maintainer: "Marek Kubica <marek@xivilization.net>"
+author: "Marek Kubica <marek@xivilization.net>"
+homepage: "https://github.com/Leonidas-from-XIV/sure-deploy"
+dev-repo: "https://github.com/Leonidas-from-XIV/node-xml2js.git"
+bug-reports: "https://github.com/Leonidas-from-XIV/sure-deploy/issues"
+build: [["jbuilder" "build" "-p" name "-j" jobs]]
+depends: [
+  "base" {>= "v0.9"}
+  "ppx_deriving_yojson" {>= "3.1"}
+  "jbuilder" {build}
+]
+
