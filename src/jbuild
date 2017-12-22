@@ -2,6 +2,7 @@
 
 (executable
  ((name sure_deploy)
-  (libraries (base))
+  (libraries (base async cohttp-async))
+  (public_name sure-deploy)
   (modules (sure_deploy))
   (preprocess (pps (ppx_deriving_yojson)))))
