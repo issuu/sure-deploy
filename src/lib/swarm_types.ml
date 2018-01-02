@@ -12,5 +12,7 @@ type update_status = {
 type service_status = {
   id : string [@key "ID"];
   spec : spec [@key "Spec"];
-  previous_spec : spec [@key "PreviousSpec"];
+  update_status : update_status option [@key "UpdateStatus"];
 } [@@deriving of_yojson { strict = false }]
+
+type service_response = service_status list [@@deriving of_yojson]

@@ -2,5 +2,5 @@
 
 (library
  ((name lib)
-  (libraries (base async cohttp-async yojson ppx_deriving_yojson.runtime))
-  (preprocess (pps (ppx_deriving_yojson)))))
+  (libraries (core async cohttp-async yojson ppx_deriving_yojson.runtime))
+  (preprocess (pps (ppx_deriving_yojson ppx_let ppx_driver.runner)))))

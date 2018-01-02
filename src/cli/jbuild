@@ -2,6 +2,7 @@
 
 (executable
  ((name sure_deploy)
-  (libraries (lib))
+  (libraries (core async lib))
   (public_name sure-deploy)
-  (modules (sure_deploy))))
+  (modules (sure_deploy))
+  (preprocess (pps (ppx_let ppx_driver.runner)))))
