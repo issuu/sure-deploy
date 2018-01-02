@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(library
+ ((name lib)
+  (libraries (base async cohttp-async yojson ppx_deriving_yojson.runtime))
+  (preprocess (pps (ppx_deriving_yojson)))))

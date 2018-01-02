@@ -6,7 +6,7 @@ dev-repo: "https://github.com/Leonidas-from-XIV/sure-deploy.git"
 bug-reports: "https://github.com/Leonidas-from-XIV/sure-deploy/issues"
 build: [["jbuilder" "build" "-p" name "-j" jobs]]
 depends: [
-  "base" {>= "v0.9"}
+  "core" {>= "v0.9"}
   "async"
   "ppx_deriving_yojson" {>= "3.1"}
   "jbuilder" {build}
