@@ -56,3 +56,9 @@ let status (host, port) service_name =
     | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e)
   | invalid -> Deferred.Or_error.errorf "Accessing status failed with error %d" invalid
 
+let finished swarm service_name =
+  let open Deferred.Or_error.Let_syntax in
+  match%map status swarm service_name with
+  | Completed -> true
+  | Paused -> true
+  | Updating -> false
