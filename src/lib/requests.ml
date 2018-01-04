@@ -71,6 +71,5 @@ let status swarm service_name =
 let finished swarm service_name =
   let open Deferred.Or_error.Let_syntax in
   match%map status swarm service_name with
-  | Completed -> true
-  | Paused -> true
-  | Updating -> false
+  | Completed | Paused | RollbackCompleted | RollbackPaused -> true
+  | Updating | RollbackStarted -> false
