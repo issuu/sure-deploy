@@ -6,13 +6,17 @@ module Body = Cohttp_async.Body
 module Response = Cohttp.Response
 module Code = Cohttp.Code
 
+module Swarm = Swarm_types.Swarm
+module Stack = Swarm_types.Stack
+module Service = Swarm_types.Service
+
 (* Docker supports a number of different APIs *)
 let api_version = "v1.24"
 
 let filter_for_stack stack_name =
   `Assoc [
     ("label", `Assoc [
-      (Printf.sprintf "com.docker.stack.namespace=%a" Swarm_types.Stack.pp stack_name, `Bool true);
+      (Printf.sprintf "com.docker.stack.namespace=%a" Stack.pp stack_name, `Bool true);
     ]);
   ]
 
@@ -24,7 +28,8 @@ let filter stack_name =
 let service_list service_resp =
   List.map service_resp ~f:(fun service -> Swarm_types.(service.spec.name))
 
-let services (host, port) stack_name =
+let services swarm stack_name =
+  let host, port = Swarm.to_host_and_port swarm in
   let url =
     Uri.make ~scheme:"http" ~host ~port ~path:(Printf.sprintf "/%s/services" api_version) ()
     |> (Fn.flip Uri.add_query_param') ("filters", filter stack_name)
@@ -41,9 +46,10 @@ let services (host, port) stack_name =
     | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e)
   | invalid -> Deferred.Or_error.errorf "Listing services failed with error %d" invalid
 
-let status (host, port) service_name =
+let status swarm service_name =
+  let host, port = Swarm.to_host_and_port swarm in
   let url = Uri.make ~scheme:"http" ~host ~port
-    ~path:(Printf.sprintf "/%s/services/%a" api_version Swarm_types.Service.pp service_name) ()
+    ~path:(Printf.sprintf "/%s/services/%a" api_version Service.pp service_name) ()
   in
   let%bind (resp, body) = Client.get url in
   match Response.status resp |> Code.code_of_status with

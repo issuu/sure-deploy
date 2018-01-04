@@ -6,13 +6,18 @@ Like Sure Fisk but for deployments.
 Build
 -----
 
+`sure-deploy` tries to adhere as much to OCaml community standards as possible.
+As such it uses `opam` files to contain the dependencies and uses `jbuilder` to
+build the executable.
+
+```sh
+opam switch create ./ 4.05.0
+```
+
+Usage
+-----
+
 TODO
-
-Docker API
-----------
-
-`curl -G 'http://swarm:2375/v1.24/services' --data-urlencode "filters={\"label\" : {\"com.docker.stack.namespace=stackname\" : true}}"`
-`curl -G 'http://swarm:2375/v1.24/services/id'`
 
 Docker image
 ------------

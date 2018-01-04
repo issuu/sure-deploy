@@ -1,9 +1,9 @@
 opam-version: "1.2"
-maintainer: "Marek Kubica <marek@xivilization.net>"
-author: "Marek Kubica <marek@xivilization.net>"
-homepage: "https://github.com/Leonidas-from-XIV/sure-deploy"
-dev-repo: "https://github.com/Leonidas-from-XIV/sure-deploy.git"
-bug-reports: "https://github.com/Leonidas-from-XIV/sure-deploy/issues"
+maintainer: "Marek Kubica <mku@issuu.com>"
+author: "Marek Kubica <mku@issuu.com>"
+homepage: "https://github.com/issuu/sure-deploy"
+dev-repo: "https://github.com/issuu/sure-deploy.git"
+bug-reports: "https://github.com/issuu/sure-deploy/issues"
 build: [["jbuilder" "build" "-p" name "-j" jobs]]
 depends: [
   "core" {>= "v0.9"}

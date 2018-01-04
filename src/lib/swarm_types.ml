@@ -19,6 +19,16 @@ module Service : Identifier = struct
   let pp () = to_string
 end
 
+module Swarm : sig
+  type t
+  val of_host_and_port : (string * int) -> t
+  val to_host_and_port : t -> (string * int)
+end = struct
+  type t = string * int
+  let of_host_and_port = Core.Fn.id
+  let to_host_and_port = Core.Fn.id
+end
+
 type service_name = Service.t
 
 let service_name_of_yojson = function
