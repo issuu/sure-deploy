@@ -11,11 +11,12 @@ RUN opam install sure-deploy
 
 FROM debian:9
 ENTRYPOINT ["/usr/local/bin/sure-deploy"]
-RUN apt-get update && \
-  apt-get upgrade -y && \
-  useradd -ms /bin/bash opam
 WORKDIR /home/opam
 COPY --from=builder /home/opam/depexts depexts
-RUN xargs apt-get install --no-install-recommends -y < depexts
+RUN apt-get update && \
+  apt-get upgrade -y && \
+  xargs apt-get install --no-install-recommends -y < depexts && \
+  rm -rf /var/lib/apt/lists/* && \
+  useradd -ms /bin/bash opam
 USER opam
 COPY --from=builder /home/opam/.opam/*/bin/sure-deploy /usr/local/bin/
