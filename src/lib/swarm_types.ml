@@ -58,9 +58,6 @@ let state_of_yojson = function
 
 type update_status = {
   state : state [@key "State"];
-  started_at : string [@key "StartedAt"];
-  completed_at : string [@key "CompletedAt"];
-  message : string [@key "Message"];
 } [@@deriving of_yojson { strict = false }]
 
 type service_status = {
