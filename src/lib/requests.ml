@@ -48,7 +48,9 @@ let services swarm stack =
 let images swarm stack =
   let open Deferred.Or_error.Let_syntax in
   let%map resp = service_metadata swarm stack in
-  List.map resp ~f:(fun service -> Swarm_types.(service.spec.task_template.container_spec.image))
+  resp
+  |> List.map ~f:(fun service -> Swarm_types.(service.spec.task_template.container_spec.image))
+  |> List.dedup
 
 let status swarm service_name =
   let host, port = Swarm.to_host_and_port swarm in
