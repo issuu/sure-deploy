@@ -54,7 +54,12 @@ let state_of_yojson = function
   | `String "completed" -> Ok Completed
   | `String "updating" -> Ok Updating
   | `String "paused" -> Ok Paused
-  | _ -> Error "swarm_types.state"
+  | `String unexpected -> Error (Printf.sprintf "swarm_types.state unexpected string: '%s'" unexpected)
+  | unexpected ->
+    let passed_in = Yojson.Safe.to_string unexpected
+      |> Printf.sprintf "swarm_types.state invalid JSON: '%s'"
+    in
+    Error passed_in
 
 type update_status = {
   state : state [@key "State"];
