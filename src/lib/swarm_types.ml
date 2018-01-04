@@ -35,8 +35,17 @@ let service_name_of_yojson = function
   | `String s -> Ok (Service.of_string s)
   | _ -> Error "swarm_types.service_name"
 
+type container_spec = {
+  image : string [@key "Image"]
+} [@@deriving of_yojson { strict = false }]
+
+type task_template = {
+  container_spec : container_spec [@key "ContainerSpec"]
+} [@@deriving of_yojson { strict = false }]
+
 type spec = {
   name : service_name [@key "Name"];
+  task_template : task_template [@key "TaskTemplate"]
 } [@@deriving of_yojson { strict = false }]
 
 type state = Completed | Paused | Updating

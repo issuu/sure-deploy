@@ -25,10 +25,7 @@ let filter stack_name =
   |> filter_for_stack
   |> Yojson.Safe.to_string
 
-let service_list service_resp =
-  List.map service_resp ~f:(fun service -> Swarm_types.(service.spec.name))
-
-let services swarm stack_name =
+let service_metadata swarm stack_name =
   let host, port = Swarm.to_host_and_port swarm in
   let url =
     Uri.make ~scheme:"http" ~host ~port ~path:(Printf.sprintf "/%s/services" api_version) ()
@@ -39,12 +36,19 @@ let services swarm stack_name =
   | 200 -> (
     let%bind body = Body.to_string body in
     match body |> Yojson.Safe.from_string |> Swarm_types.service_response_of_yojson with
-    | Ok v ->
-      v
-      |> service_list
-      |> Deferred.Or_error.return
+    | Ok v -> Deferred.Or_error.return v
     | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e)
   | invalid -> Deferred.Or_error.errorf "Listing services failed with error %d" invalid
+
+let services swarm stack =
+  let open Deferred.Or_error.Let_syntax in
+  let%map resp = service_metadata swarm stack in
+  List.map resp ~f:(fun service -> Swarm_types.(service.spec.name))
+
+let images swarm stack =
+  let open Deferred.Or_error.Let_syntax in
+  let%map resp = service_metadata swarm stack in
+  List.map resp ~f:(fun service -> Swarm_types.(service.spec.task_template.container_spec.image))
 
 let status swarm service_name =
   let host, port = Swarm.to_host_and_port swarm in
