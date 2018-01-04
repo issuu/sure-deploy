@@ -9,7 +9,7 @@ let check_service swarm service =
   | Ok true -> return None
   | Ok false -> return @@ Some service
   | Error e ->
-    Log.Global.error "Checking status of service '%a' failed, removing from waitlist." Swarm_types.Service.pp service;
+    Log.Global.error "Checking status of service '%a' failed with %s, removing from waitlist." Swarm_types.Service.pp service @@ Error.to_string_hum e;
     return None
 
 let rec wait_for_completion swarm services =
