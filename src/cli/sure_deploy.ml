@@ -10,7 +10,7 @@ let set_verbose verbose =
     | true -> `Info
     | false -> `Error
 
-let converge host port verbose stack timeout_seconds () =
+let converge host port verbose stack timeout_seconds poll_interval () =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
@@ -22,7 +22,7 @@ let converge host port verbose stack timeout_seconds () =
     let service_names = List.map services ~f:Service.to_string |> String.concat ~sep:", " in
     Log.Global.info "Services detected in '%a' stack: %s" Stack.pp stack service_names;
     let open Deferred.Let_syntax in
-    match%bind Lib.Monitor.wait_for_completion_with_timeout timeout swarm services with
+    match%bind Lib.Monitor.wait_for_completion_with_timeout timeout poll_interval swarm services with
     | `Timeout ->
       Log.Global.error "Waiting for convergence of stack '%a' timed out after %.3f seconds" Stack.pp stack timeout_seconds;
       Deferred.Or_error.return ()
@@ -48,6 +48,7 @@ let check host port verbose stack prefix () =
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
+  let span_ms = Command.Spec.Arg_type.create (Fn.compose Time.Span.of_ms float_of_string) in
   let common_spec () = Command.Spec.(
       empty
       +> flag "--host" (required string)
@@ -63,6 +64,8 @@ let () =
     Command.Spec.(
       (common_spec ())
       +> flag "--timeout" (optional_with_default 600. float)
+         ~doc:" Maximum time to wait for convergence"
+      +> flag "--poll-interval" (optional_with_default (Time.Span.of_ms 500.) span_ms)
          ~doc:" Maximum time to wait for convergence")
     converge
   in
