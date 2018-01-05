@@ -1,6 +1,8 @@
 open Core
 open Async
 
+module Service = Swarm_types.Service
+
 let check_service swarm service =
   let%bind res = Requests.finished swarm service in
   match res with
@@ -16,7 +18,12 @@ let wait_for_completion polling_interval swarm services =
     match%bind Deferred.List.filter_map ~how:`Parallel services ~f:(check_service swarm) with
     | [] -> Deferred.unit
     | uncompleted ->
-      Debounce.trigger debounce (fun () -> Log.Global.info "Waiting for %d more service(s) to settle" @@ List.length uncompleted);
+      Debounce.trigger debounce (fun () ->
+        let waiting_for = List.length uncompleted in
+        let service_names = List.map uncompleted ~f:Service.to_string |> String.concat ~sep:", " in
+        (match waiting_for with
+        | 1 -> Log.Global.info "Waiting for '%s' to settle" service_names
+        | n -> Log.Global.info "Waiting for %d services to settle: %s" n service_names));
       let%bind () = after polling_interval in
       wait uncompleted
   in
