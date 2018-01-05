@@ -6,7 +6,7 @@ type t = {
   cooldown : Time.Span.t;
 }
 
-let init ?(cooldown_ms=400.) () = {
+let init ?(cooldown_ms=2000.) () = {
   last_triggered = Time.epoch;
   cooldown = Time.Span.of_ms cooldown_ms;
 }
