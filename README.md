@@ -1,5 +1,7 @@
 # sure-deploy
 
+[![Build Status](https://travis-ci.org/issuu/sure-deploy.svg?branch=master)](https://travis-ci.org/issuu/sure-deploy)
+
 Like Sure Fisk but for deployments. Alternatively: What `docker stack deploy`
 should've been.
 
