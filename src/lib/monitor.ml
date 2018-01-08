@@ -14,9 +14,9 @@ let check_service swarm service =
 
 let wait_for_completion polling_interval swarm services =
   let debounce = Debounce.init () in
-  let rec wait services =
+  let wait services =
     match%bind Deferred.List.filter_map ~how:`Parallel services ~f:(check_service swarm) with
-    | [] -> Deferred.unit
+    | [] -> return @@ `Finished ()
     | uncompleted ->
       Debounce.trigger debounce (fun () ->
         let waiting_for = List.length uncompleted in
@@ -25,9 +25,9 @@ let wait_for_completion polling_interval swarm services =
         | 1 -> Log.Global.info "Waiting for '%s' to settle" service_names
         | n -> Log.Global.info "Waiting for %d services to settle: %s" n service_names));
       let%bind () = after polling_interval in
-      wait uncompleted
+      return @@ `Repeat uncompleted
   in
-  wait services
+  Deferred.repeat_until_finished services wait
 
 let rec wait_for_completion_with_timeout timeout polling_interval swarm services =
   Clock.with_timeout timeout (wait_for_completion polling_interval swarm services)
