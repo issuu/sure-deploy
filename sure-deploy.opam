@@ -6,8 +6,8 @@ dev-repo: "https://github.com/issuu/sure-deploy.git"
 bug-reports: "https://github.com/issuu/sure-deploy/issues"
 build: [["jbuilder" "build" "-p" name "-j" jobs]]
 depends: [
-  "core" {>= "v0.9" & < "v0.10"}
-  "async" {>= "v0.9" & < "v0.10"}
+  "core" {>= "v0.10" & < "v0.11"}
+  "async" {>= "v0.10" & < "v0.11"}
   "ppx_deriving_yojson" {>= "3.1"}
   "jbuilder" {build}
   "cohttp-async"

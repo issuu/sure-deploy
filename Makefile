@@ -1,12 +1,12 @@
 IMAGE := sure-deploy
 
-ifeq ($(BRANCH_NAME),master)
-	CONTAINER_NAME = $(IMAGE):$(BUILD_NUMBER)
+ifeq ($(TRAVIS_BRANCH),master)
+	CONTAINER_NAME = $(IMAGE):$(TRAVIS_BUILD_NUMBER)
 else
-	ifeq ($(BUILD_NUMBER),)
+	ifeq ($(TRAVIS_BUILD_NUMBER),)
 		CONTAINER_NAME = $(IMAGE)
 	else
-		CONTAINER_NAME = $(IMAGE)-$(BRANCH_NAME):$(BUILD_NUMBER)
+		CONTAINER_NAME = $(IMAGE)-$(TRAVIS_BRANCH_NAME):$(BUILD_NUMBER)
 	endif
 endif
 
@@ -24,7 +24,9 @@ docker-image:
 	docker build -f Dockerfile -t $(CONTAINER_NAME) .
 
 .PHONY: docker-push
+docker-push: QUALIFIED_CONTAINER_NAME = leonidasfromxiv/$(CONTAINER_NAME)
 docker-push:
-	@echo "Pushing docker image to registry"
-	docker tag $(CONTAINER_NAME) docker-registry.issuu.com/$(CONTAINER_NAME)
-	docker push docker-registry.issuu.com/$(CONTAINER_NAME)
+	@echo "Pushing docker image '$(CONTAINER_NAME)' to docker hub"
+	docker login -u "$(DOCKER_USERNAME)" -p "$(DOCKER_PASSWORD)"
+	docker tag $(CONTAINER_NAME) $(QUALIFIED_CONTAINER_NAME)
+	docker push $(QUALIFIED_CONTAINER_NAME)
