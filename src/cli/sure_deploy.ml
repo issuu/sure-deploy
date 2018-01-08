@@ -10,7 +10,7 @@ let set_verbose verbose =
     | true -> `Info
     | false -> `Error
 
-let converge host port verbose stack timeout_seconds poll_interval () =
+let converge host port verbose stack timeout_seconds poll_interval =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
@@ -30,7 +30,7 @@ let converge host port verbose stack timeout_seconds poll_interval () =
       Log.Global.info "Stack '%a' has converged" Stack.pp stack;
       Deferred.Or_error.return ()
 
-let check host port verbose stack prefix () =
+let check host port verbose stack prefix =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
   let open Deferred.Or_error.Let_syntax in
@@ -49,33 +49,39 @@ let check host port verbose stack prefix () =
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
   let span_ms = Command.Spec.Arg_type.create (Fn.compose Time.Span.of_ms float_of_string) in
-  let common_spec () = Command.Spec.(
-      empty
-      +> flag "--host" (required string)
-         ~doc:" Hostname to connect to"
-      +> flag "--port" (optional_with_default 2375 int)
-         ~doc:" Port to connect to"
-      +> flag "--verbose" no_arg
-         ~doc:" Display more status information"
-      +> anon ("stack-name" %: stack_name))
-  in
   let converge = Command.async_or_error
     ~summary:"Wait for convergence of stack deployment on Docker Swarm"
-    Command.Spec.(
-      (common_spec ())
-      +> flag "--timeout" (optional_with_default 600. float)
+    (let open Command.Let_syntax in
+    [%map_open
+      let host = flag "--host" (required string)
+         ~doc:" Hostname to connect to"
+      and port = flag "--port" (optional_with_default 2375 int)
+         ~doc:" Port to connect to"
+      and verbose = flag "--verbose" no_arg
+         ~doc:" Display more status information"
+      and stack = anon ("stack-name" %: stack_name)
+      and timeout = flag "--timeout" (optional_with_default 600. float)
          ~doc:" Maximum time to wait for convergence"
-      +> flag "--poll-interval" (optional_with_default (Time.Span.of_ms 500.) span_ms)
-         ~doc:" Maximum time to wait for convergence")
-    converge
+      and poll = flag "--poll-interval" (optional_with_default (Time.Span.of_ms 500.) span_ms)
+         ~doc:" Maximum time to wait for convergence"
+      in
+      fun () -> converge host port verbose stack timeout poll])
   in
   let check = Command.async_or_error
     ~summary:"Check deployment status of services in Docker Starm"
-    Command.Spec.(
-      (common_spec ())
-      +> flag "--ensure-image" (required string)
-         ~doc:" Ensure all containers run a specific image (prefix)")
-    check
+    (let open Command.Let_syntax in
+    [%map_open
+      let host = flag "--host" (required string)
+         ~doc:" Hostname to connect to"
+      and port = flag "--port" (optional_with_default 2375 int)
+         ~doc:" Port to connect to"
+      and verbose = flag "--verbose" no_arg
+         ~doc:" Display more status information"
+      and stack = anon ("stack-name" %: stack_name)
+      and ensure_image = flag "--ensure-image" (required string)
+         ~doc:" Ensure all containers run a specific image (prefix)"
+      in
+      fun () -> check host port verbose stack ensure_image])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"
