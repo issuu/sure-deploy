@@ -31,7 +31,7 @@ output more information on what the command is doing at the moment.
 
 The `converge` subcommand implements what is similar to the `--detach=false`
 option to `docker service` but for `docker stack`. Its creation was motivated
-by (docker swarm not supporting it)[swarmdetach].
+by [docker swarm not supporting it][swarmdetach].
 
 Calling `converge` will poll `docker swarm` for all services part of the
 specified stack and terminate once all the detected services reach a terminal
@@ -78,20 +78,20 @@ For people not wanting to build the binary themselves, there is a ready-made
 Docker container:
 
 ```sh
-docker run --rm -ti docker-registry.issuu.com/sure-deploy:7 --help
+docker run --rm -ti leonidasfromxiv/sure-deploy:4 --help
 ```
 
 Will show the available subcommands and how to run them. The general pattern to
 use the software is:
 
 ```sh
-docker run --rm -ti docker-registry.issuu.com/sure-deploy:<BUILD_ID> <ARGUMENTS_TO_SURE_DEPLOY>
+docker run --rm -ti leonidasfromxiv/sure-deploy:<BUILD_ID> <ARGUMENTS_TO_SURE_DEPLOY>
 ```
 
 As such the `converge` example from above can be run through `docker run` as well:
 
 ```sh
-docker run --rm -ti docker-registry.issuu.com/sure-deploy:<BUILD_ID> converge --host <SWARMHOST> <STACKNAME>
+docker run --rm -ti leonidasfromxiv/sure-deploy:<BUILD_ID> converge --host <SWARMHOST> <STACKNAME>
 ```
 
 ## License
