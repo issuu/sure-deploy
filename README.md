@@ -96,6 +96,6 @@ docker run --rm -ti docker-registry.issuu.com/sure-deploy:<BUILD_ID> converge --
 
 ## License
 
-TODO
+Apache 2.0, see [LICENSE](LICENSE).
 
 [swarmdetach]: https://github.com/docker/cli/issues/373
