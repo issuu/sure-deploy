@@ -33,7 +33,7 @@ type service_name = Service.t
 
 let service_name_of_yojson = function
   | `String s -> Ok (Service.of_string s)
-  | _ -> Error "swarm_types.service_name"
+  | _ -> Error "Swarm_types.service_name"
 
 type container_spec = {
   image : string [@key "Image"]
@@ -57,10 +57,10 @@ let state_of_yojson = function
   | `String "rollback_started" -> Ok RollbackStarted
   | `String "rollback_paused" -> Ok RollbackPaused
   | `String "rollback_completed" -> Ok RollbackCompleted
-  | `String unexpected -> Error (Printf.sprintf "swarm_types.state unexpected string: '%s'" unexpected)
+  | `String unexpected -> Error (Printf.sprintf "Swarm_types.state unexpected string: '%s'" unexpected)
   | unexpected ->
     let passed_in = Yojson.Safe.to_string unexpected
-      |> Printf.sprintf "swarm_types.state invalid JSON: '%s'"
+      |> Printf.sprintf "Swarm_types.state invalid JSON: '%s'"
     in
     Error passed_in
 

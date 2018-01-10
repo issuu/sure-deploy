@@ -37,7 +37,7 @@ let service_metadata swarm stack_name =
     let%bind body = Body.to_string body in
     match body |> Yojson.Safe.from_string |> Swarm_types.service_response_of_yojson with
     | Ok v -> Deferred.Or_error.return v
-    | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e)
+    | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s' on '%s'" e body)
   | invalid -> Deferred.Or_error.errorf "Listing services failed with error %d" invalid
 
 let services swarm stack =
@@ -50,7 +50,7 @@ let images swarm stack =
   let%map resp = service_metadata swarm stack in
   resp
   |> List.map ~f:(fun service -> Swarm_types.(service.spec.task_template.container_spec.image))
-  |> List.dedup
+  |> List.dedup_and_sort
 
 let status swarm service_name =
   let host, port = Swarm.to_host_and_port swarm in
