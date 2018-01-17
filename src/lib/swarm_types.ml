@@ -84,7 +84,7 @@ type update_status = {
 type service_status = {
   id : string [@key "ID"];
   spec : spec [@key "Spec"];
-  update_status : update_status [@key "UpdateStatus"];
+  update_status : update_status [@key "UpdateStatus"] [@default { state = Updating } ];
 } [@@deriving of_yojson { strict = false }]
 
 type service_response = service_status list [@@deriving of_yojson]
