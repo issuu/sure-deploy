@@ -1,3 +1,5 @@
+open Core
+
 module type Identifier = sig
   type t
   val of_string : string -> t
@@ -7,16 +9,27 @@ end
 
 module Stack : Identifier = struct
   type t = string
-  let of_string = Core.Fn.id
-  let to_string = Core.Fn.id
+  let of_string = Fn.id
+  let to_string = Fn.id
   let pp () = to_string
 end
 
-module Service : Identifier = struct
+module type SwarmIdentifier = sig
+  type t
+  val of_string : string -> t
+  val to_string : t -> string
+  val pp : unit -> t -> string
+  val basename : Stack.t -> t -> string
+end
+
+module Service : SwarmIdentifier = struct
   type t = string
-  let of_string = Core.Fn.id
-  let to_string = Core.Fn.id
+  let of_string = Fn.id
+  let to_string = Fn.id
   let pp () = to_string
+  let basename stack service =
+    let prefix = Printf.sprintf "%a_" Stack.pp stack in
+    String.chop_prefix_exn ~prefix service
 end
 
 module Swarm : sig
@@ -25,8 +38,8 @@ module Swarm : sig
   val to_host_and_port : t -> (string * int)
 end = struct
   type t = string * int
-  let of_host_and_port = Core.Fn.id
-  let to_host_and_port = Core.Fn.id
+  let of_host_and_port = Fn.id
+  let to_host_and_port = Fn.id
 end
 
 type service_name = Service.t

@@ -22,7 +22,7 @@ let converge host port verbose stack timeout_seconds poll_interval =
     let service_names = List.map services ~f:Service.to_string |> String.concat ~sep:", " in
     Log.Global.info "Services detected in '%a' stack: %s" Stack.pp stack service_names;
     let open Deferred.Let_syntax in
-    match%bind Lib.Monitor.wait_for_completion_with_timeout timeout poll_interval swarm services with
+    match%bind Lib.Monitor.wait_for_completion_with_timeout timeout poll_interval swarm stack services with
     | `Timeout ->
       Log.Global.error "Waiting for convergence of stack '%a' timed out after %.3f seconds" Stack.pp stack timeout_seconds;
       Deferred.Or_error.return ()
