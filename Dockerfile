@@ -11,7 +11,8 @@ RUN opam install sure-deploy
 FROM alpine:3.6
 ENTRYPOINT ["/usr/local/bin/sure-deploy"]
 WORKDIR /home/opam
-RUN apk add tzdata && \
+RUN apk update && \
+  apk add tzdata && \
   adduser -D opam
 USER opam
 COPY --from=builder /home/opam/.opam/*/bin/sure-deploy /usr/local/bin/
