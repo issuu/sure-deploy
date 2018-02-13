@@ -1,13 +1,3 @@
-type token =
-  | STRING of string
-  | DOLLAR
-  | LEFT_BRACE
-  | RIGHT_BRACE
-  | COLON
-  | QUESTION
-  | DASH
-  | EOF
-
 type name = string
 type substitution = string
 type msg = string

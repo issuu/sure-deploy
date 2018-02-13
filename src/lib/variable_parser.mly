@@ -1,4 +1,6 @@
 %token <string> STRING
+%token <string> SHORT_VARNAME
+%token <string> VARNAME
 %token DOLLAR
 %token DOLLAR_ESCAPE
 %token LEFT_BRACE
@@ -17,16 +19,18 @@ prog:
   ;
 
 value:
-  | DOLLAR; LEFT_BRACE; n = variable_name; RIGHT_BRACE
+  | DOLLAR; LEFT_BRACE; n = VARNAME; RIGHT_BRACE
     { Variable n }
-  | DOLLAR; LEFT_BRACE; n = variable_name; COLON ; DASH ; s = substitution_value ; RIGHT_BRACE
-    { Empty_variable n s }
-  | DOLLAR; LEFT_BRACE; n = variable_name; DASH ; s = substitution_value ; RIGHT_BRACE
-    { Unset_variable n s }
-  | DOLLAR; LEFT_BRACE; n = variable_name; COLON ; QUESTION ; s = substitution_value ; RIGHT_BRACE
-    { Empty_error_variable n s }
-  | DOLLAR; LEFT_BRACE; n = variable_name; QUESTION ; s = substitution_value ; RIGHT_BRACE
-    { Unset_error_variable n s }
+  | DOLLAR; LEFT_BRACE; n = VARNAME; COLON ; DASH ; s = STRING ; RIGHT_BRACE
+    { Empty_variable (n, s) }
+  | DOLLAR; LEFT_BRACE; n = VARNAME; DASH ; s = STRING ; RIGHT_BRACE
+    { Unset_variable (n, s) }
+  | DOLLAR; LEFT_BRACE; n = VARNAME; COLON ; QUESTION ; s = STRING ; RIGHT_BRACE
+    { Empty_error_variable (n, s) }
+  | DOLLAR; LEFT_BRACE; n = VARNAME; QUESTION ; s = STRING ; RIGHT_BRACE
+    { Unset_error_variable (n, s) }
+  | DOLLAR; n = SHORT_VARNAME
+    { Variable n }
   | DOLLAR_ESCAPE
     { String "$$" }
   | s = STRING
