@@ -1,5 +1,8 @@
 (jbuild_version 1)
 
+(menhir
+ ((modules (variable_parser))))
+
 (library
  ((name lib)
   (libraries (core async cohttp-async yojson ppx_deriving_yojson.runtime yaml))
