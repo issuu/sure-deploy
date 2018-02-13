@@ -12,6 +12,15 @@ let next_line lexbuf =
     }
 }
 
+let varname = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '_' '0'-'9']*
+
 rule read =
   parse
+  | '{' { LEFT_BRACE }
+  | '}' { RIGHT_BRACE }
+  | '?' { QUESTION}
+  | '-' { DASH }
+  | "$$" { DOLLAR_ESCAPE }
+  | '$' { DOLLAR }
+  | _ { raise (Syntax_error ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
   | eof { EOF }
