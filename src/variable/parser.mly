@@ -10,7 +10,7 @@
 %token DASH
 %token EOF
 
-%start <Variable.value option> prog
+%start <Types.value option> prog
 %%
 
 prog:
