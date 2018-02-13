@@ -11,5 +11,6 @@ depends: [
   "ppx_deriving_yojson" {>= "3.1"}
   "jbuilder" {build}
   "cohttp-async"
+  "yaml"
 ]
 
