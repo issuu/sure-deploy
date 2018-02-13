@@ -1,5 +1,4 @@
 %token <string> STRING
-%token <string> SHORT_VARNAME
 %token <string> VARNAME
 %token DOLLAR
 %token DOLLAR_ESCAPE
@@ -29,7 +28,7 @@ value:
     { Empty_error_variable (n, s) }
   | DOLLAR; LEFT_BRACE; n = VARNAME; QUESTION ; s = STRING ; RIGHT_BRACE
     { Unset_error_variable (n, s) }
-  | DOLLAR; n = SHORT_VARNAME
+  | DOLLAR; n = VARNAME
     { Variable n }
   | DOLLAR_ESCAPE
     { String "$$" }
