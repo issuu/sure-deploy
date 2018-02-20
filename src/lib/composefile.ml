@@ -1,15 +1,16 @@
 open Core
 
-(* TODO:
-  * Parsing the images line of YAML
-  * Implement the templating in Docker Compose files
-  *)
-
 type service_spec = {
   name: string;
   image: string;
   (* TODO: possibly other interesting values *)
 }
+
+let environment () =
+  Unix.environment ()
+  |> Array.map ~f:(String.lsplit2_exn ~on:'=')
+  |> Array.to_list
+  |> String.Map.of_alist_exn
 
 let load_file filename =
   filename
@@ -38,9 +39,7 @@ let specs = function
 
 type context = string String.Map.t
 
-let substitute_string : context -> string -> string = fun context value ->
-  value
-
-let substitute_template : context -> service_spec -> service_spec = fun context ({image; _} as spec) ->
-  { spec with
-    image = substitute_string context image }
+let substitute_template : context -> service_spec -> service_spec Or_error.t = fun context ({image; _} as spec) ->
+  let open Or_error.Let_syntax in
+  let%bind image = Variable.substitute context image in
+  return { spec with image }

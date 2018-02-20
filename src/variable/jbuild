@@ -7,4 +7,5 @@
 
 (library
  ((name variable)
-  (libraries (core))))
+  (libraries (core))
+  (preprocess (pps (ppx_let ppx_driver.runner)))))

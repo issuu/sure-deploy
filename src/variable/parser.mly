@@ -1,37 +1,45 @@
 %token <string> STRING
-%token <string> VARNAME
-%token DOLLAR
-%token DOLLAR_ESCAPE
-%token LEFT_BRACE
-%token RIGHT_BRACE
-%token COLON
-%token QUESTION
-%token DASH
+%token <string * string option * string option> VARNAME
 %token EOF
 
-%start <Types.value option> prog
+%start <Types.value list option> prog
 %%
 
 prog:
-  | EOF { None }
-  | v = value { Some v }
+  | EOF
+    { None }
+  | v = value_sequence; EOF
+    { Some v }
+  ;
+
+value_sequence:
+  | seq = rev_value_sequence
+    { List.rev seq }
+  ;
+
+rev_value_sequence:
+  | v = value
+    { [v] }
+  | seq = rev_value_sequence; v = value
+    { v :: seq }
   ;
 
 value:
-  | DOLLAR; LEFT_BRACE; n = VARNAME; RIGHT_BRACE
-    { Variable n }
-  | DOLLAR; LEFT_BRACE; n = VARNAME; COLON ; DASH ; s = STRING ; RIGHT_BRACE
-    { Empty_variable (n, s) }
-  | DOLLAR; LEFT_BRACE; n = VARNAME; DASH ; s = STRING ; RIGHT_BRACE
-    { Unset_variable (n, s) }
-  | DOLLAR; LEFT_BRACE; n = VARNAME; COLON ; QUESTION ; s = STRING ; RIGHT_BRACE
-    { Empty_error_variable (n, s) }
-  | DOLLAR; LEFT_BRACE; n = VARNAME; QUESTION ; s = STRING ; RIGHT_BRACE
-    { Unset_error_variable (n, s) }
-  | DOLLAR; n = VARNAME
-    { Variable n }
-  | DOLLAR_ESCAPE
-    { String "$$" }
+  | v = VARNAME;
+    {
+    let (name, mode, subst) = v in
+    match mode, subst with
+    | None, _ -> Types.Variable name
+    | Some ":-", Some s -> Unset_or_empty_variable (name, s)
+    | Some ":-", None -> Unset_or_empty_variable (name, "")
+    | Some "-", Some s -> Unset_variable (name, s)
+    | Some "-", None -> Unset_variable (name, "")
+    | Some ":?", Some s -> Unset_or_empty_error_variable (name, s)
+    | Some ":?", None -> Unset_or_empty_error_variable (name, "")
+    | Some "?", Some s -> Unset_error_variable (name, s)
+    | Some "?", None -> Unset_error_variable (name, "")
+    | _, _ -> failwith "Parsing failed due to invalid token"
+    }
   | s = STRING
-    { String s }
+    { Types.String s }
   ;
