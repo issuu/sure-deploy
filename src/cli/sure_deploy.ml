@@ -46,6 +46,10 @@ let check host port verbose stack prefix =
       Deferred.Or_error.return ()
     | false -> Deferred.Or_error.errorf "Some services have different images deployed"
 
+let verify host port verbose stack composefile =
+  set_verbose verbose;
+  Deferred.Or_error.errorf "Not yet implemented"
+
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
   let span_ms = Command.Spec.Arg_type.create (Fn.compose Time.Span.of_ms float_of_string) in
@@ -68,7 +72,7 @@ let () =
       fun () -> converge host port verbose stack timeout poll])
   in
   let check = Command.async_or_error
-    ~summary:"Check deployment status of services in Docker Starm"
+    ~summary:"Check deployment status of services in Docker Swarm"
     (let open Command.Let_syntax in
     [%map_open
       let host = flag "--host" (required string)
@@ -83,10 +87,27 @@ let () =
       in
       fun () -> check host port verbose stack ensure_image])
   in
+  let verify = Command.async_or_error
+    ~summary:"Compare deployment status of services in Docker Swarm with docker-compose.yml definitions"
+    (let open Command.Let_syntax in
+    [%map_open
+      let host = flag "--host" (required string)
+         ~doc:" Hostname to connect to"
+      and port = flag "--port" (optional_with_default 2375 int)
+         ~doc:" Port to connect to"
+      and verbose = flag "--verbose" no_arg
+         ~doc:" Display more status information"
+      and stack = anon ("stack-name" %: stack_name)
+      and composefile = flag "--compose-file" (optional_with_default "docker-compose.yml" string)
+        ~doc:" Compose file to read (default: docker-compose.yml)"
+      in
+      fun () -> verify host port verbose stack composefile])
+  in
   Command.group
     ~summary:"Deployment helper for Docker Stack"
     [
       ("converge", converge);
       ("check", check);
+      ("verify", verify);
     ]
   |> Command.run
