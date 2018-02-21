@@ -16,12 +16,14 @@ let environment () =
 
 let load_file : string -> parsed Or_error.t =
   fun filename ->
-  filename
-  |> In_channel.read_all
-  |> Yaml.of_string
-  |> function
-    | Ok v -> Or_error.return v
-    | Error (`Msg s) -> Or_error.errorf "%s" s
+  match In_channel.read_all filename with
+  | exception Sys_error e -> Or_error.errorf "%s" e
+  | v ->
+      v
+      |> Yaml.of_string
+      |> function
+        | Ok v -> Or_error.return v
+        | Error (`Msg s) -> Or_error.errorf "%s" s
 
 let parse_service : (string * Yaml.value) -> service_spec Or_error.t =
   fun (name, definition) ->
@@ -60,3 +62,10 @@ let resolve_specs : context -> service_spec list -> service_spec list Or_error.t
     specs
     |> List.map ~f:(substitute_template context)
     |> Or_error.all
+
+let load : string -> context -> service_spec list Or_error.t =
+  fun filename context ->
+    let open Or_error.Let_syntax in
+    let%bind parsed = load_file filename in
+    let%bind specs = specs parsed in
+    resolve_specs context specs

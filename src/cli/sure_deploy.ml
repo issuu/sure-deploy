@@ -48,7 +48,14 @@ let check host port verbose stack prefix =
 
 let verify host port verbose stack composefile =
   set_verbose verbose;
-  Deferred.Or_error.errorf "Not yet implemented"
+  let swarm = Swarm.of_host_and_port (host, port) in
+  let env = Lib.Composefile.environment () in
+  match Lib.Composefile.load composefile env with
+  | Error _ as e -> Deferred.return e
+  | Ok specs ->
+    let%bind deployed_service_images = Lib.Requests.service_images swarm stack in
+    (* TODO *)
+    Deferred.Or_error.errorf "Not yet implemented"
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
