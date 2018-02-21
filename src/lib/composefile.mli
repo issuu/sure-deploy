@@ -7,7 +7,7 @@ type service_spec = {
 }
 type parsed
 
-val load_file : string -> parsed Yaml.res
-val specs : parsed -> (service_spec list, string) result
-val resolve_specs : context -> service_spec list -> (service_spec list, string) result
+val load_file : string -> parsed Or_error.t
+val specs : parsed -> service_spec list Or_error.t
+val resolve_specs : context -> service_spec list -> service_spec list Or_error.t
 val environment : unit -> context
