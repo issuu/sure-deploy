@@ -51,9 +51,9 @@ type context = string String.Map.t
 
 let substitute_template : context -> service_spec -> service_spec Or_error.t =
   fun context ({image; _} as spec) ->
-    match Variable.substitute context image with
-    | Ok image -> Or_error.return { spec with image }
-    | Error _ as e -> e
+    let open Or_error.Let_syntax in
+    let%bind image = Variable.substitute context image in
+    return { spec with image }
 
 let resolve_specs : context -> service_spec list -> service_spec list Or_error.t =
   fun context specs ->
