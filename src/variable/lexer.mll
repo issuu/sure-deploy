@@ -1,15 +1,8 @@
 {
-open Lexing
 open Parser
 
-exception Syntax_error of string
-
-let next_line lexbuf =
-  let pos = lexbuf.lex_curr_p in
-  lexbuf.lex_curr_p <-
-    { pos with pos_bol = lexbuf.lex_curr_pos;
-               pos_lnum = pos.pos_lnum + 1
-    }
+module Or_error = Core.Or_error
+let return = Or_error.return
 }
 
 let varname = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '_' '0'-'9']*
@@ -17,21 +10,21 @@ let split = '-'|":-"|'?'|":?"
 
 rule read_subst_variable buf =
   parse
-  | varname as v (split as divider) ([^ '}']+ as subst) '}' { VARNAME (v, Some divider, Some subst) }
-  | varname as v '}' { VARNAME (v, None, None) }
-  | _ { raise (Syntax_error ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
-  | eof { EOF }
+  | varname as v (split as divider) ([^ '}']+ as subst) '}' { return @@ VARNAME (v, Some divider, Some subst) }
+  | varname as v '}' { return @@ VARNAME (v, None, None) }
+  | _ { Or_error.errorf "Unexpected char: %s" (Lexing.lexeme lexbuf) }
+  | eof { return EOF }
 
 and read_variable =
   parse
   | '{' { read_subst_variable (Buffer.create 17) lexbuf }
-  | varname { VARNAME ((Lexing.lexeme lexbuf), None, None) }
-  | eof { EOF }
+  | varname { return @@ VARNAME ((Lexing.lexeme lexbuf), None, None) }
+  | eof { return @@ EOF }
 
 and read_string buf =
   parse
   | "$$" { Buffer.add_char buf '$'; read_string buf lexbuf }
   | '$' { read_variable lexbuf }
-  | [^ '$']+ { STRING (Lexing.lexeme lexbuf) }
-  | _ { raise (Syntax_error ("Unknown string character: " ^ Lexing.lexeme lexbuf)) }
-  | eof { EOF }
+  | [^ '$']+ { return @@ STRING (Lexing.lexeme lexbuf) }
+  | _ { Or_error.errorf "Unknown string character: %s" (Lexing.lexeme lexbuf) }
+  | eof { return @@ EOF }

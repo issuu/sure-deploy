@@ -1,4 +1,4 @@
-exception Error
+open Core
 
 type token =
   | STRING of string
@@ -21,13 +21,12 @@ let value = function
     | _, _ -> failwith "Parsing failed due to invalid token")
   | EOF -> failwith "TODO: handle EOF"
 
-let prog lex lexbuf =
+let prog : _ -> _ -> Types.value list Or_error.t = fun lex lexbuf ->
   let rec lex_all' acc =
-    let token = lex lexbuf in
-    match token with
-    | EOF -> acc
-    | token -> lex_all' @@ (value token) :: acc
+    match lex lexbuf with
+    | Error _ as e -> e
+    | Ok EOF -> Or_error.return acc
+    | Ok token -> lex_all' @@ (value token) :: acc
   in
-  lex_all' []
-  |> List.rev
-  |> fun x -> Some x
+  let parsed = lex_all' [] in
+  Or_error.map parsed ~f:List.rev
