@@ -24,30 +24,30 @@ let lookup_or_empty context k =
 let substitute context template =
   let open Or_error.Let_syntax in
   let%bind parts = parse template in
-    let%bind resolved = List.fold_result parts ~init:[] ~f:(fun acc part ->
-      match part with
-      | String s -> Or_error.return @@ s :: acc
-      | Variable n -> Or_error.return @@ lookup_or_empty context n :: acc
-      | Unset_variable (n, subst) ->
-          (match String.Map.find context n with
-          | None -> Or_error.return @@ subst :: acc
-          | Some v -> Or_error.return @@ v :: acc)
-      | Unset_or_empty_variable (n, subst) ->
-          (match String.Map.find context n with
-          | None
-          | Some "" -> Or_error.return @@ subst :: acc
-          | Some v -> Or_error.return @@ v :: acc)
-      | Unset_error_variable (n, msg) ->
-          (match String.Map.find context n with
-          | None -> Or_error.errorf "Error im template: '%s'" msg
-          | Some v -> Or_error.return @@ v :: acc)
-      | Unset_or_empty_error_variable (n, msg) ->
-          (match String.Map.find context n with
-          | None
-          | Some "" -> Or_error.errorf "Error im template: '%s'" msg
-          | Some v -> Or_error.return @@ v :: acc))
-    in
-    resolved |> List.rev |> String.concat ~sep:"" |> return
+  let%bind resolved = List.fold_result parts ~init:[] ~f:(fun acc part ->
+    match part with
+    | String s -> Or_error.return @@ s :: acc
+    | Variable n -> Or_error.return @@ lookup_or_empty context n :: acc
+    | Unset_variable (n, subst) ->
+        (match String.Map.find context n with
+        | None -> Or_error.return @@ subst :: acc
+        | Some v -> Or_error.return @@ v :: acc)
+    | Unset_or_empty_variable (n, subst) ->
+        (match String.Map.find context n with
+        | None
+        | Some "" -> Or_error.return @@ subst :: acc
+        | Some v -> Or_error.return @@ v :: acc)
+    | Unset_error_variable (n, msg) ->
+        (match String.Map.find context n with
+        | None -> Or_error.errorf "Error im template: '%s'" msg
+        | Some v -> Or_error.return @@ v :: acc)
+    | Unset_or_empty_error_variable (n, msg) ->
+        (match String.Map.find context n with
+        | None
+        | Some "" -> Or_error.errorf "Error im template: '%s'" msg
+        | Some v -> Or_error.return @@ v :: acc))
+  in
+  resolved |> List.rev |> String.concat ~sep:"" |> return
 
 
 (* functions to visualize results of tokenizer and parser *)
