@@ -4,6 +4,7 @@ open Async
 module Stack = Lib.Swarm_types.Stack
 module Swarm = Lib.Swarm_types.Swarm
 module Service = Lib.Swarm_types.Service
+module Image = Lib.Swarm_types.Image
 
 let set_verbose verbose =
   Log.Global.set_level @@ match verbose with
@@ -38,7 +39,8 @@ let check host port verbose stack prefix =
   | [] ->
     Deferred.Or_error.errorf "No services found for stack '%a'" Stack.pp stack
   | images ->
-    let image_names = String.concat ~sep:", " images in
+    let images = images |> List.map ~f:Image.to_string in
+    let image_names = images |> String.concat ~sep:", " in
     Log.Global.info "Images detected in '%a' stack: %s" Stack.pp stack image_names;
     match List.for_all images ~f:(String.is_prefix ~prefix) with
     | true ->
@@ -46,10 +48,12 @@ let check host port verbose stack prefix =
       Deferred.Or_error.return ()
     | false -> Deferred.Or_error.errorf "Some services have different images deployed"
 
-let match_spec_and_service : _ -> (Service.t * string) list -> (Service.t * string * string) list Or_error.t = fun specs service_images ->
+let match_spec_and_service
+  : Stack.t -> Lib.Composefile.service_spec list -> (Service.t * Image.t) list -> (Service.t * Image.t * Image.t) list Or_error.t =
+  fun stack specs service_images ->
   let open Or_error.Let_syntax in
   let%bind matched = List.fold_result specs ~init:[] ~f:(fun acc {Lib.Composefile.name; image} ->
-    match List.Assoc.find service_images ~equal:Service.equal name with
+    match List.Assoc.find service_images ~equal:(Service.equal_basename stack) name with
     | None -> Or_error.errorf "Failed to find spec '%a' in deployed services" Service.pp name
     | Some deployed_image -> Or_error.return @@ (name, image, deployed_image) :: acc)
   in
@@ -68,11 +72,13 @@ let verify host port verbose stack composefile =
   | Ok specs ->
     let open Deferred.Or_error.Let_syntax in
     let%bind deployed_service_images = Lib.Requests.service_images swarm stack in
-    let%bind matched_spec = Deferred.return @@ match_spec_and_service specs deployed_service_images in
-    Deferred.return @@ List.fold_result matched_spec ~init:() ~f:(fun () (name, prefix, deployed) ->
-      match String.is_prefix ~prefix deployed with
+    let%bind matched_spec = Deferred.return @@ match_spec_and_service stack specs deployed_service_images in
+    let%bind () = Deferred.return @@ List.fold_result matched_spec ~init:() ~f:(fun () (name, desired, deployed) ->
+      match Image.equal_nametag desired deployed with
       | true -> Or_error.return ()
-      | false -> Or_error.errorf "Service '%a' expected '%s*' but '%s' was deployed" Service.pp name prefix deployed)
+      | false -> Or_error.errorf "Service '%a' expected '%a' but '%a' was deployed" Service.pp name Image.pp desired Image.pp deployed)
+    in
+    return @@ Log.Global.info "Swarm state and composefile match"
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in

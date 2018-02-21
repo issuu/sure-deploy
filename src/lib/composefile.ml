@@ -1,12 +1,12 @@
 open Core
 
-type service_spec = {
-  name: Swarm_types.service_name;
-  image: string;
-  (* TODO: possibly other interesting values *)
-}
+module Service = Swarm_types.Service
+module Image = Swarm_types.Image
 
-type parsed = Yaml.value
+type service_spec = {
+  name: Service.t;
+  image: Image.t;
+}
 
 let environment () =
   Unix.environment ()
@@ -14,7 +14,7 @@ let environment () =
   |> Array.to_list
   |> String.Map.of_alist_exn
 
-let load_file : string -> parsed Or_error.t =
+let load_file : string -> Yaml.value Or_error.t =
   fun filename ->
   match In_channel.read_all filename with
   | exception Sys_error e -> Or_error.errorf "%s" e
@@ -31,7 +31,10 @@ let parse_service : (string * Yaml.value) -> service_spec Or_error.t =
       | `O defs -> (
         match List.Assoc.find defs ~equal:String.equal "image" with
         | None -> Or_error.errorf "Definition of service '%s' has no 'image' field" name
-        | Some (`String image) -> Or_error.return { name = Swarm_types.Service.of_string name; image }
+        | Some (`String image) ->
+          let name = Service.of_string name in
+          let image = Image.of_string image in
+          Or_error.return { name; image }
         | Some _ -> Or_error.errorf "Definition of 'image' field in service '%s' has invalid type" name)
       | _ -> Or_error.errorf "Expected an object in definition of service '%s'" name
 
@@ -42,7 +45,7 @@ let parse_services : Yaml.value -> service_spec list Or_error.t = function
     |> Or_error.all
   | _ -> Or_error.errorf "'service' key did not map to an object"
 
-let specs : parsed -> service_spec list Or_error.t = function
+let specs : Yaml.value -> service_spec list Or_error.t = function
   | `O top_level ->
     (match List.Assoc.find top_level ~equal:String.equal "services" with
     | None -> Or_error.errorf "No 'services' defined"
@@ -54,7 +57,8 @@ type context = string String.Map.t
 let substitute_template : context -> service_spec -> service_spec Or_error.t =
   fun context ({image; _} as spec) ->
     let open Or_error.Let_syntax in
-    let%bind image = Variable.substitute context image in
+    let%bind image = Variable.substitute context (Image.to_string image) in
+    let image = Image.of_string image in
     return { spec with image }
 
 let resolve_specs : context -> service_spec list -> service_spec list Or_error.t =

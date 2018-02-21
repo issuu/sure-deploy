@@ -21,6 +21,7 @@ module type SwarmIdentifier = sig
   val pp : unit -> t -> string
   val basename : Stack.t -> t -> string
   val equal : t -> t -> bool
+  val equal_basename : Stack.t -> t -> t -> bool
 end
 
 module Service : SwarmIdentifier = struct
@@ -28,10 +29,48 @@ module Service : SwarmIdentifier = struct
   let of_string = Fn.id
   let to_string = Fn.id
   let pp () = to_string
+  let equal = String.equal
+
   let basename stack service =
     let prefix = Printf.sprintf "%a_" Stack.pp stack in
-    String.chop_prefix_exn ~prefix service
-  let equal = String.equal
+    match String.chop_prefix ~prefix service with
+    | Some suffix -> suffix
+    | None -> service
+
+  let equal_basename stack a b =
+    let a = basename stack a in
+    let b = basename stack b in
+    String.equal a b
+end
+
+module Image : sig
+  type t
+  val pp : unit -> t -> string
+  val of_string : string -> t
+  val to_string : t -> string
+  val equal_nametag : t -> t -> bool
+  val of_yojson : Yojson.Safe.json -> (t, string) result
+end = struct
+  type t = string
+  let of_string = Fn.id
+  let to_string = Fn.id
+  let pp () = Fn.id
+
+  let of_yojson = function
+    | `String s -> Ok (of_string s)
+    | _ -> Error "Swarm_types.Image"
+
+  let basename image =
+    (* first @ is considered divider between name & tag and hash *)
+    match String.lsplit2 ~on:'@' image with
+    | None -> image
+    | Some (nametag, _hash) -> nametag
+
+  let equal_nametag a b =
+    let a = basename a in
+    let b = basename b in
+    String.equal a b
+
 end
 
 module Swarm : sig
@@ -51,7 +90,7 @@ let service_name_of_yojson = function
   | _ -> Error "Swarm_types.service_name"
 
 type container_spec = {
-  image : string [@key "Image"]
+  image : Image.t [@key "Image"]
 } [@@deriving of_yojson { strict = false }]
 
 type task_template = {
