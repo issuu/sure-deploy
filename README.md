@@ -55,7 +55,10 @@ A sample `converge` run can be done this way:
 sure-deploy converge --host <SWARMHOST> <STACKNAME>
 ```
 
-### `check`
+### `check` (Deprecated)
+
+**DEPRECATED**: Use the `verify` command below, it supports parsing your
+`docker-compose.yml`, so the deployments it supports are more universal.
 
 After a `docker swarm` deployment has converged it might have ended in one of
 two states:
@@ -66,13 +69,62 @@ two states:
    rolled back.
 
 After a deployment you have to check. The `check` subcommand does exactly this:
-checks whether the deployment was successful. There are a number of different
-ways to check, because the definition of successful is not as simple.
+checks whether the deployment was successful.
 
 What `check` currently supports is to make sure all images run the same image,
 passed on the command line. This is clearly not a comprehensive works-for-all
-solution but works as a first step. A more comprehensive solution would read
-the `docker-compose` YAML file and check the information contained here.
+solution, for a more universal solution use the `verify` command.
+
+### `verify`
+
+After a `docker swarm` deployment has converged it might have ended in one of
+two states:
+
+1. The deployment succeeded. Congratulations, you are good to go.
+2. The deployment failed. This might be due to any number of things. Maybe the
+   configuration was invalid, the containers could not be started or have been
+   rolled back.
+
+After a deployment has finished you have to check in which of those states your
+deployment ended up being. Since you already have a `docker-compose.yml` you
+used to deploy, you can use the `verify` command to check whether what is
+deployed is what you expected it to be.
+
+Currently it checks that your stack contains exactly the same services as your
+Docker Compose file specifies and these services run exactly the versions that
+your Compose file requires.
+
+Simple usage:
+
+```sh
+sure-deploy verify --host <SWARMHOST> <STACKNAME>
+```
+
+Since Docker Compose files can use template variables like `$IMAGE_NAME` or
+`${REVISION}`, you can pass these values as environment variables, in the exact
+same fashion as to the `docker` command:
+
+```sh
+REVISION=cee7f68 sure-deploy verify --host <SWARMHOST> <STACKNAME>
+```
+
+By default the `docker-compose.yml` in the current directory is read, but this
+can be overridden, check `verify --help` for a list of options.
+
+When using it via Docker image, you need to mount your `docker-compose.yml` to
+`/home/opam/docker-compose.yml`, so `sure-deploy` can read your
+`docker-compose.yml` inside the Docker container.
+
+```sh
+docker run --rm -ti \
+  --mount type=bind,src=$(pwd)/docker-compose.yml,dst=/home/opam/docker-compose.yml,readonly \
+  -e <VARIABLE_IN_DOCKER_COMPOSE>=<VALUE> \
+  leonidasfromxiv/sure-deploy:<BUILD_ID> \
+  verify --host <SWARMHOST> <STACKNAME>
+```
+
+The command is complicated but this is due to how verbose mounting things from
+the local file system to a Docker container is.
 
 ## Docker image
 
@@ -80,7 +132,7 @@ For people not wanting to build the binary themselves, there is a ready-made
 Docker container:
 
 ```sh
-docker run --rm -ti leonidasfromxiv/sure-deploy:4 --help
+docker run --rm -ti leonidasfromxiv/sure-deploy:13 --help
 ```
 
 Will show the available subcommands and how to run them. The general pattern to
