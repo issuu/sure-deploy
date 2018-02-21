@@ -2,9 +2,6 @@
 
 (ocamllex (lexer))
 
-(menhir
- ((modules (parser))))
-
 (library
  ((name variable)
   (libraries (core))

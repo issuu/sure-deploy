@@ -10,7 +10,6 @@ depends: [
   "async" {>= "v0.10" & < "v0.11"}
   "ppx_deriving_yojson" {>= "3.1"}
   "jbuilder" {build}
-  "menhir" {build}
   "cohttp-async"
   "yaml"
 ]
