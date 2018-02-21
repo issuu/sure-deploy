@@ -20,6 +20,7 @@ module type SwarmIdentifier = sig
   val to_string : t -> string
   val pp : unit -> t -> string
   val basename : Stack.t -> t -> string
+  val equal : t -> t -> bool
 end
 
 module Service : SwarmIdentifier = struct
@@ -30,6 +31,7 @@ module Service : SwarmIdentifier = struct
   let basename stack service =
     let prefix = Printf.sprintf "%a_" Stack.pp stack in
     String.chop_prefix_exn ~prefix service
+  let equal = String.equal
 end
 
 module Swarm : sig

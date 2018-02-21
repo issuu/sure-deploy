@@ -1,7 +1,7 @@
 open Core
 
 type service_spec = {
-  name: string;
+  name: Swarm_types.service_name;
   image: string;
   (* TODO: possibly other interesting values *)
 }
@@ -31,7 +31,7 @@ let parse_service : (string * Yaml.value) -> service_spec Or_error.t =
       | `O defs -> (
         match List.Assoc.find defs ~equal:String.equal "image" with
         | None -> Or_error.errorf "Definition of service '%s' has no 'image' field" name
-        | Some (`String image) -> Or_error.return { name; image }
+        | Some (`String image) -> Or_error.return { name = Swarm_types.Service.of_string name; image }
         | Some _ -> Or_error.errorf "Definition of 'image' field in service '%s' has invalid type" name)
       | _ -> Or_error.errorf "Expected an object in definition of service '%s'" name
 

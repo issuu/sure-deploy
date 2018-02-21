@@ -40,11 +40,24 @@ let check host port verbose stack prefix =
   | images ->
     let image_names = String.concat ~sep:", " images in
     Log.Global.info "Images detected in '%a' stack: %s" Stack.pp stack image_names;
-    match List.for_all images ~f:(fun image -> String.is_prefix ~prefix image) with
+    match List.for_all images ~f:(String.is_prefix ~prefix) with
     | true ->
       Log.Global.info "Stack '%a' has all services run '%s*'" Stack.pp stack prefix;
       Deferred.Or_error.return ()
     | false -> Deferred.Or_error.errorf "Some services have different images deployed"
+
+let match_spec_and_service : _ -> (Service.t * string) list -> (Service.t * string * string) list Or_error.t = fun specs service_images ->
+  let open Or_error.Let_syntax in
+  let%bind matched = List.fold_result specs ~init:[] ~f:(fun acc {Lib.Composefile.name; image} ->
+    match List.Assoc.find service_images ~equal:Service.equal name with
+    | None -> Or_error.errorf "Failed to find spec '%a' in deployed services" Service.pp name
+    | Some deployed_image -> Or_error.return @@ (name, image, deployed_image) :: acc)
+  in
+  let spec_count, service_count = List.length specs, List.length service_images in
+  match spec_count = service_count with
+  | true -> Or_error.return matched
+  | false ->
+    Or_error.errorf "Amount of services deployed (%d) does not match services specified (%d)" service_count spec_count
 
 let verify host port verbose stack composefile =
   set_verbose verbose;
@@ -53,9 +66,13 @@ let verify host port verbose stack composefile =
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e
   | Ok specs ->
+    let open Deferred.Or_error.Let_syntax in
     let%bind deployed_service_images = Lib.Requests.service_images swarm stack in
-    (* TODO *)
-    Deferred.Or_error.errorf "Not yet implemented"
+    let%bind matched_spec = Deferred.return @@ match_spec_and_service specs deployed_service_images in
+    Deferred.return @@ List.fold_result matched_spec ~init:() ~f:(fun () (name, prefix, deployed) ->
+      match String.is_prefix ~prefix deployed with
+      | true -> Or_error.return ()
+      | false -> Or_error.errorf "Service '%a' expected '%s*' but '%s' was deployed" Service.pp name prefix deployed)
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in

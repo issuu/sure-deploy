@@ -2,7 +2,7 @@ open Core
 
 type context = string String.Map.t
 type service_spec = {
-  name: string;
+  name: Swarm_types.service_name;
   image: string;
 }
 
