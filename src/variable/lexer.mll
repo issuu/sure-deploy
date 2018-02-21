@@ -6,19 +6,21 @@ let return = Or_error.return
 }
 
 let varname = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '_' '0'-'9']*
-let split = '-'|":-"|'?'|":?"
 
 rule read_subst_variable buf =
   parse
-  | varname as v (split as divider) ([^ '}']+ as subst) '}' { return @@ VARNAME (v, Some divider, Some subst) }
-  | varname as v '}' { return @@ VARNAME (v, None, None) }
+  | varname as v ":-" ([^ '}']+ as subst) '}' { return @@ VARNAME (v, Some (Unset_or_empty subst)) }
+  | varname as v '-' ([^ '}']+ as subst) '}' { return @@ VARNAME (v, Some (Unset subst)) }
+  | varname as v ":?" ([^ '}']+ as msg) '}' { return @@ VARNAME (v, Some (Unset_or_empty_error msg)) }
+  | varname as v '?' ([^ '}']+ as msg) '}' { return @@ VARNAME (v, Some (Unset_error msg)) }
+  | varname as v '}' { return @@ VARNAME (v, None) }
   | _ { Or_error.errorf "Unexpected char: %s" (Lexing.lexeme lexbuf) }
   | eof { return EOF }
 
 and read_variable =
   parse
   | '{' { read_subst_variable (Buffer.create 17) lexbuf }
-  | varname { return @@ VARNAME ((Lexing.lexeme lexbuf), None, None) }
+  | varname { return @@ VARNAME ((Lexing.lexeme lexbuf), None) }
   | eof { return @@ EOF }
 
 and read_string buf =

@@ -52,14 +52,6 @@ let substitute context template =
 
 (* functions to visualize results of tokenizer and parser *)
 
-let string_of_token = function
-  | Parser.STRING s -> Printf.sprintf "STRING(\"%s\")" s
-  | VARNAME (n, t, s) ->
-      let s = match s with | None -> "[None]" | Some v -> v in
-      let t = match t with | None -> "[None]" | Some v -> v in
-      Printf.sprintf "VARNAME(%s,%s,%s)" n t s
-  | EOF -> "EOF"
-
 let string_of_value = function
   | Types.String s -> Printf.sprintf "String(\"%s\")" s
   | Variable n -> Printf.sprintf "Variable(%s)" n
