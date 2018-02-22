@@ -8,24 +8,14 @@ type service_spec = {
   image: Image.t;
 }
 
-let environment () =
-  Unix.environment ()
-  |> Array.map ~f:(String.lsplit2_exn ~on:'=')
-  |> Array.to_list
-  |> String.Map.of_alist_exn
-
 let load_file : string -> Yaml.value Or_error.t =
   fun filename ->
-  match In_channel.read_all filename with
-  | exception Sys_error e -> Or_error.errorf "%s" e
-  | v ->
-      v
-      |> Yaml.of_string
-      |> function
-        | Ok v -> Or_error.return v
-        | Error (`Msg s) -> Or_error.errorf "%s" s
+  Or_error.try_with_join @@ fun () ->
+    In_channel.read_all filename
+    |> Yaml.of_string
+    |> Result.map_error ~f:(fun (`Msg s) -> Error.createf "%s" s)
 
-let parse_service : (string * Yaml.value) -> service_spec Or_error.t =
+let extract_service : (string * Yaml.value) -> service_spec Or_error.t =
   fun (name, definition) ->
     match definition with
       | `O defs -> (
@@ -38,10 +28,10 @@ let parse_service : (string * Yaml.value) -> service_spec Or_error.t =
         | Some _ -> Or_error.errorf "Definition of 'image' field in service '%s' has invalid type" name)
       | _ -> Or_error.errorf "Expected an object in definition of service '%s'" name
 
-let parse_services : Yaml.value -> service_spec list Or_error.t = function
+let extract_services : Yaml.value -> service_spec list Or_error.t = function
   | `O service_list ->
     service_list
-    |> List.map ~f:parse_service
+    |> List.map ~f:extract_service
     |> Or_error.all
   | _ -> Or_error.errorf "'service' key did not map to an object"
 
@@ -49,7 +39,7 @@ let specs : Yaml.value -> service_spec list Or_error.t = function
   | `O top_level ->
     (match List.Assoc.find top_level ~equal:String.equal "services" with
     | None -> Or_error.errorf "No 'services' defined"
-    | Some services -> parse_services services)
+    | Some services -> extract_services services)
   | _ -> Or_error.errorf "Top level object expected"
 
 type context = string String.Map.t
@@ -70,6 +60,6 @@ let resolve_specs : context -> service_spec list -> service_spec list Or_error.t
 let load : string -> context -> service_spec list Or_error.t =
   fun filename context ->
     let open Or_error.Let_syntax in
-    let%bind parsed = load_file filename in
-    let%bind specs = specs parsed in
-    resolve_specs context specs
+    let%bind yaml_parsed = load_file filename in
+    let%bind extracted_specs = specs yaml_parsed in
+    resolve_specs context extracted_specs

@@ -7,4 +7,3 @@ type service_spec = {
 }
 
 val load : string -> context -> service_spec list Or_error.t
-val environment : unit -> context

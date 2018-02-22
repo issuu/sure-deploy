@@ -11,6 +11,12 @@ let set_verbose verbose =
     | true -> `Info
     | false -> `Error
 
+let environment () =
+  Unix.environment ()
+  |> Array.map ~f:(String.lsplit2_exn ~on:'=')
+  |> Array.to_list
+  |> String.Map.of_alist_exn
+
 let converge host port verbose stack timeout_seconds poll_interval =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
@@ -66,7 +72,7 @@ let match_spec_and_service
 let verify host port verbose stack composefile =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
-  let env = Lib.Composefile.environment () in
+  let env = environment () in
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e
   | Ok specs ->
