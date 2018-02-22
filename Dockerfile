@@ -13,6 +13,7 @@ ENTRYPOINT ["/usr/local/bin/sure-deploy"]
 WORKDIR /home/opam
 RUN apk update && \
   apk add tzdata && \
-  adduser -D opam
+  adduser -D opam && \
+  touch /home/opam/docker-compose.yml
 USER opam
 COPY --from=builder /home/opam/.opam/*/bin/sure-deploy /usr/local/bin/

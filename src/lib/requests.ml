@@ -40,16 +40,25 @@ let service_metadata swarm stack_name =
     | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s' on '%s'" e body)
   | invalid -> Deferred.Or_error.errorf "Listing services failed with error %d" invalid
 
-let services swarm stack =
-  let open Deferred.Or_error.Let_syntax in
-  let%map resp = service_metadata swarm stack in
-  List.map resp ~f:(fun service -> Swarm_types.(service.spec.name))
-
-let images swarm stack =
+let service_images swarm stack =
   let open Deferred.Or_error.Let_syntax in
   let%map resp = service_metadata swarm stack in
   resp
-  |> List.map ~f:(fun service -> Swarm_types.(service.spec.task_template.container_spec.image))
+  |> List.map ~f:(fun service ->
+      (Swarm_types.(service.spec.name),
+       Swarm_types.(service.spec.task_template.container_spec.image)))
+
+let services swarm stack =
+  let open Deferred.Or_error.Let_syntax in
+  let%map resp = service_images swarm stack in
+  resp
+  |> List.map ~f:fst
+
+let images swarm stack =
+  let open Deferred.Or_error.Let_syntax in
+  let%map resp = service_images swarm stack in
+  resp
+  |> List.map ~f:snd
   |> List.dedup_and_sort
 
 let status swarm service_name =
