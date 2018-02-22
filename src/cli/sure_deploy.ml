@@ -39,10 +39,9 @@ let check host port verbose stack prefix =
   | [] ->
     Deferred.Or_error.errorf "No services found for stack '%a'" Stack.pp stack
   | images ->
-    let images = images |> List.map ~f:Image.to_string in
-    let image_names = images |> String.concat ~sep:", " in
+    let image_names = images|> List.map ~f:Image.to_string |> String.concat ~sep:", " in
     Log.Global.info "Images detected in '%a' stack: %s" Stack.pp stack image_names;
-    match List.for_all images ~f:(String.is_prefix ~prefix) with
+    match List.for_all images ~f:(Image.has_prefix ~prefix) with
     | true ->
       Log.Global.info "Stack '%a' has all services run '%s*'" Stack.pp stack prefix;
       Deferred.Or_error.return ()

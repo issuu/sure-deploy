@@ -50,6 +50,7 @@ module Image : sig
   val to_string : t -> string
   val equal_nametag : t -> t -> bool
   val of_yojson : Yojson.Safe.json -> (t, string) result
+  val has_prefix : t -> prefix:string -> bool
 end = struct
   type t = string
   let of_string = Fn.id
@@ -71,6 +72,7 @@ end = struct
     let b = basename b in
     String.equal a b
 
+  let has_prefix = String.is_prefix
 end
 
 module Swarm : sig
