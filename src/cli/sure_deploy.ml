@@ -56,7 +56,8 @@ let match_spec_and_service
     | None -> Or_error.errorf "Failed to find spec '%a' in deployed services" Service.pp name
     | Some deployed_image -> Or_error.return @@ (name, image, deployed_image) :: acc)
   in
-  let spec_count, service_count = List.length specs, List.length service_images in
+  let spec_count = List.length specs in
+  let service_count = List.length service_images in
   match spec_count = service_count with
   | true -> Or_error.return matched
   | false ->
