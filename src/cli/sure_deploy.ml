@@ -12,17 +12,14 @@ let set_verbose verbose =
     | false -> `Error
 
 let environment () =
-  let bindings = Unix.environment ()
-    |> Array.map ~f:(String.lsplit2 ~on:'=')
-    |> Array.to_list
-    |> Option.all
-  in
-  match bindings with
-  | None -> Or_error.errorf "Variables could not be parsed, you have environment variables not containing '='"
-  | Some bindings ->
-    match String.Map.of_alist bindings with
-    | `Ok envmap -> Or_error.return envmap
-    | `Duplicate_key name -> Or_error.errorf "Environment variables contain duplicated variable '%s'" name
+  let open Or_error.Monad_infix in
+  ()
+  |> Unix.environment
+  |> Array.map ~f:(String.lsplit2 ~on:'=')
+  |> Array.to_list
+  |> Option.all
+  |> Result.of_option ~error:(Error.of_string "Variables could not be parsed, you have environment variables not containing '='")
+  >>= String.Map.of_alist_or_error
 
 let converge host port verbose stack timeout_seconds poll_interval =
   set_verbose verbose;
