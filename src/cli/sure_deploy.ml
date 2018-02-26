@@ -12,10 +12,17 @@ let set_verbose verbose =
     | false -> `Error
 
 let environment () =
-  Unix.environment ()
-  |> Array.map ~f:(String.lsplit2_exn ~on:'=')
-  |> Array.to_list
-  |> String.Map.of_alist_exn
+  let bindings = Unix.environment ()
+    |> Array.map ~f:(String.lsplit2 ~on:'=')
+    |> Array.to_list
+    |> Option.all
+  in
+  match bindings with
+  | None -> Or_error.errorf "Variables could not be parsed, you have environment variables not containing '='"
+  | Some bindings ->
+    match String.Map.of_alist bindings with
+    | `Ok envmap -> Or_error.return envmap
+    | `Duplicate_key name -> Or_error.errorf "Environment variables contain duplicated variable '%s'" name
 
 let converge host port verbose stack timeout_seconds poll_interval =
   set_verbose verbose;
@@ -72,11 +79,11 @@ let match_spec_and_service
 let verify host port verbose stack composefile =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
-  let env = environment () in
+  let open Deferred.Or_error.Let_syntax in
+  let%bind env = Deferred.return @@ environment () in
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e
   | Ok specs ->
-    let open Deferred.Or_error.Let_syntax in
     let%bind deployed_service_images = Lib.Requests.service_images swarm stack in
     let%bind matched_spec = Deferred.return @@ match_spec_and_service stack specs deployed_service_images in
     let%bind () = Deferred.return @@ List.fold_result matched_spec ~init:() ~f:(fun () (name, desired, deployed) ->
