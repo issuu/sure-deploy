@@ -41,22 +41,6 @@ let converge host port verbose stack timeout_seconds poll_interval =
       Log.Global.info "Stack '%a' has converged" Stack.pp stack;
       Deferred.Or_error.return ()
 
-let check host port verbose stack prefix =
-  set_verbose verbose;
-  let swarm = Swarm.of_host_and_port (host, port) in
-  let open Deferred.Or_error.Let_syntax in
-  match%bind Lib.Requests.images swarm stack with
-  | [] ->
-    Deferred.Or_error.errorf "No services found for stack '%a'" Stack.pp stack
-  | images ->
-    let image_names = images|> List.map ~f:Image.to_string |> String.concat ~sep:", " in
-    Log.Global.info "Images detected in '%a' stack: %s" Stack.pp stack image_names;
-    match List.for_all images ~f:(Image.has_prefix ~prefix) with
-    | true ->
-      Log.Global.info "Stack '%a' has all services run '%s*'" Stack.pp stack prefix;
-      Deferred.Or_error.return ()
-    | false -> Deferred.Or_error.errorf "Some services have different images deployed"
-
 let match_spec_and_service
   : Stack.t -> Lib.Composefile.service_spec list -> (Service.t * Image.t) list -> (Service.t * Image.t * Image.t) list Or_error.t =
   fun stack specs service_images ->
@@ -111,22 +95,6 @@ let () =
       in
       fun () -> converge host port verbose stack timeout poll])
   in
-  let check = Command.async_or_error
-    ~summary:"Check deployment status of services in Docker Swarm"
-    (let open Command.Let_syntax in
-    [%map_open
-      let host = flag "--host" (required string)
-         ~doc:" Hostname to connect to"
-      and port = flag "--port" (optional_with_default 2375 int)
-         ~doc:" Port to connect to"
-      and verbose = flag "--verbose" no_arg
-         ~doc:" Display more status information"
-      and stack = anon ("stack-name" %: stack_name)
-      and ensure_image = flag "--ensure-image" (required string)
-         ~doc:" Ensure all containers run a specific image (prefix)"
-      in
-      fun () -> check host port verbose stack ensure_image])
-  in
   let verify = Command.async_or_error
     ~summary:"Compare deployment status of services in Docker Swarm with docker-compose.yml definitions"
     (let open Command.Let_syntax in
@@ -147,7 +115,6 @@ let () =
     ~summary:"Deployment helper for Docker Stack"
     [
       ("converge", converge);
-      ("check", check);
       ("verify", verify);
     ]
   |> Command.run

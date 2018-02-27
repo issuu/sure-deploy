@@ -55,26 +55,6 @@ A sample `converge` run can be done this way:
 sure-deploy converge --host <SWARMHOST> <STACKNAME>
 ```
 
-### `check` (Deprecated)
-
-**DEPRECATED**: Use the `verify` command below, it supports parsing your
-`docker-compose.yml`, so the deployments it supports are more universal.
-
-After a `docker swarm` deployment has converged it might have ended in one of
-two states:
-
-1. The deployment succeeded. Congratulations, you are good to go.
-2. The deployment failed. This might be due to any number of things. Maybe the
-   configuration was invalid, the containers could not be started or have been
-   rolled back.
-
-After a deployment you have to check. The `check` subcommand does exactly this:
-checks whether the deployment was successful.
-
-What `check` currently supports is to make sure all images run the same image,
-passed on the command line. This is clearly not a comprehensive works-for-all
-solution, for a more universal solution use the `verify` command.
-
 ### `verify`
 
 After a `docker swarm` deployment has converged it might have ended in one of
