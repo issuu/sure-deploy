@@ -54,13 +54,6 @@ let services swarm stack =
   resp
   |> List.map ~f:fst
 
-let images swarm stack =
-  let open Deferred.Or_error.Let_syntax in
-  let%map resp = service_images swarm stack in
-  resp
-  |> List.map ~f:snd
-  |> List.dedup_and_sort
-
 let status swarm service_name =
   let host, port = Swarm.to_host_and_port swarm in
   let url = Uri.make ~scheme:"http" ~host ~port
