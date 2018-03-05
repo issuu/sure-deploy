@@ -35,8 +35,7 @@ let converge host port verbose stack timeout_seconds poll_interval =
     let open Deferred.Let_syntax in
     match%bind Lib.Monitor.wait_for_completion_with_timeout timeout poll_interval swarm stack services with
     | `Timeout ->
-      Log.Global.error "Waiting for convergence of stack '%a' timed out after %.3f seconds" Stack.pp stack timeout_seconds;
-      Deferred.Or_error.return ()
+      Deferred.Or_error.errorf "Waiting for convergence of stack '%a' timed out after %.3f seconds" Stack.pp stack timeout_seconds
     | `Result () ->
       Log.Global.info "Stack '%a' has converged" Stack.pp stack;
       Deferred.Or_error.return ()
