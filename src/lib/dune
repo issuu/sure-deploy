@@ -1,0 +1,6 @@
+(library
+ (name lib)
+ (libraries core async cohttp-async yojson ppx_deriving_yojson.runtime yaml variable)
+ ; ppx_deriving_yojson generates functions with unused rec flags, so disable this for now
+ (flags (:standard -w -39))
+ (preprocess (pps ppx_deriving_yojson ppx_let)))

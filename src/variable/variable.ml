@@ -48,14 +48,3 @@ let substitute context template =
         | Some v -> Or_error.return @@ v :: acc))
   in
   resolved |> List.rev |> String.concat ~sep:"" |> return
-
-
-(* functions to visualize results of tokenizer and parser *)
-
-let string_of_value = function
-  | Types.String s -> Printf.sprintf "String(\"%s\")" s
-  | Variable n -> Printf.sprintf "Variable(%s)" n
-  | Unset_variable (n, subst) -> Printf.sprintf "Unset_variable(%s, \"%s\")" n subst
-  | Unset_or_empty_variable (n, subst) -> Printf.sprintf "Unset_or_empty_variable(%s, \"%s\")" n subst
-  | Unset_error_variable (n, msg) -> Printf.sprintf "Unset_error_variable(%s, \"%s\")" n msg
-  | Unset_or_empty_error_variable (n, msg) -> Printf.sprintf "Unset_or_empty_error_variable(%s, \"%s\")" n msg
