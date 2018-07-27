@@ -12,11 +12,11 @@ endif
 
 .PHONY: all
 all:
-	jbuilder build
+	dune build
 
 .PHONY: clean
 clean:
-	jbuilder clean
+	dune clean
 
 .PHONY: docker-image
 docker-image:

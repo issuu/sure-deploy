@@ -1,8 +1,0 @@
-(jbuild_version 1)
-
-(executable
- ((name sure_deploy)
-  (libraries (core async lib))
-  (public_name sure-deploy)
-  (modules (sure_deploy))
-  (preprocess (pps (ppx_let ppx_driver.runner)))))

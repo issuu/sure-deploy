@@ -1,0 +1,6 @@
+(ocamllex lexer)
+
+(library
+ (name variable)
+ (libraries core)
+ (preprocess (pps ppx_let)))
