@@ -24,7 +24,7 @@ docker-image:
 	docker build -f Dockerfile -t $(CONTAINER_NAME) .
 
 .PHONY: docker-push
-docker-push: QUALIFIED_CONTAINER_NAME = leonidasfromxiv/$(CONTAINER_NAME)
+docker-push: QUALIFIED_CONTAINER_NAME = issuu/$(CONTAINER_NAME)
 docker-push:
 	@echo "Pushing docker image '$(CONTAINER_NAME)' to docker hub"
 	docker login -u "$(DOCKER_USERNAME)" -p "$(DOCKER_PASSWORD)"
