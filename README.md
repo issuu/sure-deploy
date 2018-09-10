@@ -99,7 +99,7 @@ When using it via Docker image, you need to mount your `docker-compose.yml` to
 docker run --rm -ti \
   --mount type=bind,src=$(pwd)/docker-compose.yml,dst=/home/opam/docker-compose.yml,readonly \
   -e <VARIABLE_IN_DOCKER_COMPOSE>=<VALUE> \
-  leonidasfromxiv/sure-deploy:<BUILD_ID> \
+  issuu/sure-deploy:<BUILD_ID> \
   verify --host <SWARMHOST> <STACKNAME>
 ```
 
@@ -112,20 +112,20 @@ For people not wanting to build the binary themselves, there is a ready-made
 Docker container:
 
 ```sh
-docker run --rm -ti leonidasfromxiv/sure-deploy:13 --help
+docker run --rm -ti issuu/sure-deploy:57 --help
 ```
 
 Will show the available subcommands and how to run them. The general pattern to
 use the software is:
 
 ```sh
-docker run --rm -ti leonidasfromxiv/sure-deploy:<BUILD_ID> <ARGUMENTS_TO_SURE_DEPLOY>
+docker run --rm -ti issuu/sure-deploy:<BUILD_ID> <ARGUMENTS_TO_SURE_DEPLOY>
 ```
 
 As such the `converge` example from above can be run through `docker run` as well:
 
 ```sh
-docker run --rm -ti leonidasfromxiv/sure-deploy:<BUILD_ID> converge --host <SWARMHOST> <STACKNAME>
+docker run --rm -ti issuu/sure-deploy:<BUILD_ID> converge --host <SWARMHOST> <STACKNAME>
 ```
 
 ## License
