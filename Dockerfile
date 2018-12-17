@@ -1,4 +1,4 @@
-FROM ocaml/opam2:alpine-3.7-ocaml-4.06 as builder
+FROM ocaml/opam2:alpine-3.8-ocaml-4.07 as builder
 ENV OPAMYES=1
 COPY sure-deploy.opam /home/opam/sure-deploy/
 RUN git -C /home/opam/opam-repository pull --quiet && \
@@ -9,7 +9,7 @@ RUN git -C /home/opam/opam-repository pull --quiet && \
 COPY src /home/opam/sure-deploy/src
 RUN opam install sure-deploy
 
-FROM alpine:3.7
+FROM alpine:3.8
 ENTRYPOINT ["/usr/local/bin/sure-deploy"]
 WORKDIR /home/opam
 RUN apk update && \
