@@ -5,9 +5,11 @@ RUN git -C /home/opam/opam-repository pull --quiet && \
   opam update > /dev/null && \
   opam pin --no-action add sure-deploy /home/opam/sure-deploy && \
   opam depext sure-deploy && \
-  opam install --deps-only sure-deploy
+  opam install --deps-only sure-deploy && \
+  opam install ocamlformat.0.9
 COPY src /home/opam/sure-deploy/src
-RUN opam install sure-deploy
+RUN (cd /home/opam/sure-deploy; opam exec -- make format) && \
+  opam install sure-deploy
 
 FROM alpine:3.9
 ENTRYPOINT ["/usr/local/bin/sure-deploy"]
