@@ -50,26 +50,77 @@ module Image : sig
   val to_string : t -> string
   val equal_nametag : t -> t -> bool
   val of_yojson : Yojson.Safe.json -> (t, string) result
+  val registry : t -> string option
+  val name : t -> string
+  val tag : t -> string option
 end = struct
-  type t = string
-  let of_string = Fn.id
-  let to_string = Fn.id
-  let pp () = Fn.id
+  type t = {
+    registry : string option;
+    name: string;
+    tag: string option;
+    hash: string option;
+  } [@@deriving eq]
+
+  let parse_name s =
+    match String.lsplit2 ~on:':' s with
+    | None ->
+      (s, None, None)
+    | Some (name, rest) ->
+      match String.lsplit2 ~on:'@' rest with
+      | None ->
+        (name, Some rest, None)
+      | Some (tag, hash) ->
+        (name, Some tag, Some hash)
+
+  let of_string s =
+    match String.lsplit2 ~on:'/' s with
+    | None ->
+      let registry = None in
+      let (name, tag, hash) = parse_name s in
+      { registry; name; tag; hash }
+    | Some (candidate, _) ->
+      match String.mem candidate '.' with
+      | true ->
+        let registry = Some candidate in
+        let (name, tag, hash) = parse_name s in
+        { registry; name; tag; hash }
+      | false ->
+        let registry = None in
+        let (name, tag, hash) = parse_name s in
+        { registry; name; tag; hash }
+
+  let to_string { registry; name; tag; hash } =
+    let registry_chunk = match registry with
+    | Some r -> Printf.sprintf "%s/" r
+    | None -> ""
+    in
+    let tag_chunk = match tag with
+    | None -> ""
+    | Some t -> (
+      match hash with
+      | None -> Printf.sprintf ":%s" t
+      | Some h -> Printf.sprintf ":%s@%s" t h)
+    in
+    Printf.sprintf "%s%s%s" registry_chunk name tag_chunk
+
+  let pp () = to_string
 
   let of_yojson = function
     | `String s -> Ok (of_string s)
-    | _ -> Error "Swarm_types.Image"
+    | _ -> Error "Swarm_types.Image.t"
 
-  let basename image =
-    (* first @ is considered divider between name & tag and hash *)
-    match String.lsplit2 ~on:'@' image with
-    | None -> image
-    | Some (nametag, _hash) -> nametag
+  let basename t =
+    {t with hash = None}
 
   let equal_nametag a b =
-    let a = basename a in
-    let b = basename b in
-    String.equal a b
+    equal (basename a) (basename b)
+
+  let registry { registry; _ } =
+    registry
+
+  let tag { tag; _ } = tag
+
+  let name { name; _ } = name
 end
 
 module Swarm : sig
@@ -128,3 +179,11 @@ type service_status = {
 } [@@deriving of_yojson { strict = false }]
 
 type service_response = service_status list [@@deriving of_yojson]
+
+type image_config = {
+  digest: string;
+} [@@deriving of_yojson { strict = false }]
+
+type image_manifest = {
+  config: image_config;
+} [@@deriving of_yojson { strict = false }]
