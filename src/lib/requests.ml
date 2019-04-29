@@ -80,7 +80,7 @@ let finished swarm service_name =
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
 let image_digest ~registry ~name ~tag =
-  let url = Uri.make ~scheme:"https" ~host:registry ~port:80
+  let url = Uri.make ~scheme:"https" ~host:registry
     ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag) ()
   in
   let headers = Cohttp.Header.init_with "Accept" v2_manifest in
