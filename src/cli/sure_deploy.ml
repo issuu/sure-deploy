@@ -57,19 +57,31 @@ let match_spec_and_service
     Or_error.errorf "Amount of services deployed (%d) does not match services specified (%d)" service_count spec_count
 
 let verify host port verbose stack composefile =
+  let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
-  let open Deferred.Or_error.Let_syntax in
   let%bind env = Deferred.return @@ environment () in
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e
   | Ok specs ->
     let%bind deployed_service_images = Lib.Requests.service_images swarm stack in
     let%bind matched_spec = Deferred.return @@ match_spec_and_service stack specs deployed_service_images in
-    let%bind () = Deferred.return @@ List.fold_result matched_spec ~init:() ~f:(fun () (name, desired, deployed) ->
+    let%bind () = Deferred.Result.all_unit @@ List.map matched_spec ~f:(fun (name, desired, deployed) ->
       match Image.equal_nametag desired deployed with
-      | true -> Or_error.return ()
-      | false -> Or_error.errorf "Service '%a' expected '%a' but '%a' was deployed" Service.pp name Image.pp desired Image.pp deployed)
+      | true -> Deferred.Or_error.return ()
+      | false ->
+          let default = "registry.hub.docker.com" in
+          let deployed_registry = Option.value ~default @@ Image.registry deployed in
+          let desired_registry = Option.value ~default @@ Image.registry desired in
+          let default = "latest" in
+          let deployed_tag = Option.value ~default @@ Image.tag deployed in
+          let desired_tag = Option.value ~default @@ Image.tag desired in
+          let%bind deployed_hash = Lib.Requests.image_digest ~registry:deployed_registry ~name:(Image.name deployed) ~tag:deployed_tag in
+          let%bind desired_hash = Lib.Requests.image_digest ~registry:desired_registry ~name:(Image.name desired) ~tag:desired_tag in
+          match String.equal deployed_hash desired_hash with
+          | true -> Deferred.Or_error.return ()
+          | false ->
+            Deferred.Or_error.errorf "Service '%a' expected '%a' but '%a' was deployed" Service.pp name Image.pp desired Image.pp deployed)
     in
     return @@ Log.Global.info "Swarm state and composefile match"
 

@@ -5,6 +5,7 @@ module Client = Cohttp_async.Client
 module Body = Cohttp_async.Body
 module Response = Cohttp.Response
 module Code = Cohttp.Code
+module Headers = Cohttp.Header
 
 module Swarm = Swarm_types.Swarm
 module Stack = Swarm_types.Stack
@@ -75,3 +76,20 @@ let finished swarm service_name =
   match%map status swarm service_name with
   | Completed | Paused | RollbackCompleted | RollbackPaused -> true
   | Updating | RollbackStarted -> false
+
+let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
+
+let image_digest ~registry ~name ~tag =
+  let url = Uri.make ~scheme:"https" ~host:registry ~port:80
+    ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag) ()
+  in
+  let headers = Cohttp.Header.init_with "Accept" v2_manifest in
+  let%bind (resp, body) = Client.get ~headers url in
+  match Response.status resp |> Code.code_of_status with
+  | 200 -> (
+    let%bind body = Body.to_string body in
+    match body |> Yojson.Safe.from_string |> Swarm_types.image_manifest_of_yojson with
+    | Ok { config } ->
+      Deferred.Or_error.return config.digest
+    | Error e -> Deferred.Or_error.errorf "Parsing registry response failed on '%s'" e)
+  | invalid -> Deferred.Or_error.errorf "Accessing registry failed with error %d" invalid
