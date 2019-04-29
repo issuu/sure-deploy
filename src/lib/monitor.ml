@@ -30,5 +30,5 @@ let wait_for_completion polling_interval swarm stack services =
   in
   Deferred.repeat_until_finished services wait
 
-let rec wait_for_completion_with_timeout timeout polling_interval swarm stack services =
+let wait_for_completion_with_timeout timeout polling_interval swarm stack services =
   Clock.with_timeout timeout (wait_for_completion polling_interval swarm stack services)
