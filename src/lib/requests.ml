@@ -1,12 +1,10 @@
 open Core
 open Async
-
 module Client = Cohttp_async.Client
 module Body = Cohttp_async.Body
 module Response = Cohttp.Response
 module Code = Cohttp.Code
 module Headers = Cohttp.Header
-
 module Swarm = Swarm_types.Swarm
 module Stack = Swarm_types.Stack
 module Service = Swarm_types.Service
@@ -15,30 +13,35 @@ module Service = Swarm_types.Service
 let api_version = "v1.24"
 
 let filter_for_stack stack_name =
-  `Assoc [
-    ("label", `Assoc [
-      (Printf.sprintf "com.docker.stack.namespace=%a" Stack.pp stack_name, `Bool true);
-    ]);
-  ]
+  `Assoc
+    [ ( "label",
+        `Assoc
+          [Printf.sprintf "com.docker.stack.namespace=%a" Stack.pp stack_name, `Bool true]
+      ) ]
 
-let filter stack_name =
-  stack_name
-  |> filter_for_stack
-  |> Yojson.Safe.to_string
+let filter stack_name = stack_name |> filter_for_stack |> Yojson.Safe.to_string
 
 let service_metadata swarm stack_name =
   let host, port = Swarm.to_host_and_port swarm in
   let url =
-    Uri.make ~scheme:"http" ~host ~port ~path:(Printf.sprintf "/%s/services" api_version) ()
+    Uri.make
+      ~scheme:"http"
+      ~host
+      ~port
+      ~path:(Printf.sprintf "/%s/services" api_version)
+      ()
     |> (Fn.flip Uri.add_query_param') ("filters", filter stack_name)
   in
-  let%bind (resp, body) = Client.get url in
+  let%bind resp, body = Client.get url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
-    let%bind body = Body.to_string body in
-    match body |> Yojson.Safe.from_string |> Swarm_types.service_response_of_yojson with
-    | Ok v -> Deferred.Or_error.return v
-    | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s' on '%s'" e body)
+      let%bind body = Body.to_string body in
+      match
+        body |> Yojson.Safe.from_string |> Swarm_types.service_response_of_yojson
+      with
+      | Ok v -> Deferred.Or_error.return v
+      | Error e ->
+          Deferred.Or_error.errorf "Parsing response failed with '%s' on '%s'" e body )
   | invalid -> Deferred.Or_error.errorf "Listing services failed with error %d" invalid
 
 let service_images swarm stack =
@@ -46,29 +49,31 @@ let service_images swarm stack =
   let%map resp = service_metadata swarm stack in
   resp
   |> List.map ~f:(fun service ->
-      (Swarm_types.(service.spec.name),
-       Swarm_types.(service.spec.task_template.container_spec.image)))
+         ( Swarm_types.(service.spec.name),
+           Swarm_types.(service.spec.task_template.container_spec.image) ) )
 
 let services swarm stack =
   let open Deferred.Or_error.Let_syntax in
   let%map resp = service_images swarm stack in
-  resp
-  |> List.map ~f:fst
+  resp |> List.map ~f:fst
 
 let status swarm service_name =
   let host, port = Swarm.to_host_and_port swarm in
-  let url = Uri.make ~scheme:"http" ~host ~port
-    ~path:(Printf.sprintf "/%s/services/%a" api_version Service.pp service_name) ()
+  let url =
+    Uri.make
+      ~scheme:"http"
+      ~host
+      ~port
+      ~path:(Printf.sprintf "/%s/services/%a" api_version Service.pp service_name)
+      ()
   in
-  let%bind (resp, body) = Client.get url in
+  let%bind resp, body = Client.get url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
-    let%bind body = Body.to_string body in
-    match body |> Yojson.Safe.from_string |> Swarm_types.service_status_of_yojson with
-    | Ok service ->
-      service.update_status.state
-      |> Deferred.Or_error.return
-    | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e)
+      let%bind body = Body.to_string body in
+      match body |> Yojson.Safe.from_string |> Swarm_types.service_status_of_yojson with
+      | Ok service -> service.update_status.state |> Deferred.Or_error.return
+      | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e )
   | invalid -> Deferred.Or_error.errorf "Accessing status failed with error %d" invalid
 
 let finished swarm service_name =
@@ -80,16 +85,20 @@ let finished swarm service_name =
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
 let image_digest ~registry ~name ~tag =
-  let url = Uri.make ~scheme:"https" ~host:registry
-    ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag) ()
+  let url =
+    Uri.make
+      ~scheme:"https"
+      ~host:registry
+      ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag)
+      ()
   in
   let headers = Cohttp.Header.init_with "Accept" v2_manifest in
-  let%bind (resp, body) = Client.get ~headers url in
+  let%bind resp, body = Client.get ~headers url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
-    let%bind body = Body.to_string body in
-    match body |> Yojson.Safe.from_string |> Swarm_types.image_manifest_of_yojson with
-    | Ok { config } ->
-      Deferred.Or_error.return config.digest
-    | Error e -> Deferred.Or_error.errorf "Parsing registry response failed on '%s'" e)
+      let%bind body = Body.to_string body in
+      match body |> Yojson.Safe.from_string |> Swarm_types.image_manifest_of_yojson with
+      | Ok {config} -> Deferred.Or_error.return config.digest
+      | Error e -> Deferred.Or_error.errorf "Parsing registry response failed on '%s'" e
+      )
   | invalid -> Deferred.Or_error.errorf "Accessing registry failed with error %d" invalid

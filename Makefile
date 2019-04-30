@@ -30,3 +30,7 @@ docker-push:
 	docker login -u "$(DOCKER_USERNAME)" -p "$(DOCKER_PASSWORD)"
 	docker tag $(CONTAINER_NAME) $(QUALIFIED_CONTAINER_NAME)
 	docker push $(QUALIFIED_CONTAINER_NAME)
+
+.PHONY: format
+format:
+	dune build @fmt --auto-promote @install
