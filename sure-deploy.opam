@@ -6,11 +6,13 @@ dev-repo: "https://github.com/issuu/sure-deploy.git"
 bug-reports: "https://github.com/issuu/sure-deploy/issues"
 build: [["dune" "build" "-p" name "-j" jobs]]
 depends: [
-  "core" {>= "v0.11" & < "v0.12"}
-  "async" {>= "v0.11" & < "v0.12"}
+  "core" {>= "v0.11" & < "v0.13"}
+  "async" {>= "v0.11" & < "v0.13"}
+  "async_ssl" {>= "v0.11" & < "v0.13"}
   "ppx_deriving_yojson" {>= "3.3" & < "4.0"}
   "dune" {build & > "1.4"}
-  "cohttp-async"
-  "yaml"
+  "cohttp-async" {>= "2.1.1"}
+  "cohttp" {>= "2.1.2"}
+  "yaml" {>= "2.0.0"}
 ]
 
