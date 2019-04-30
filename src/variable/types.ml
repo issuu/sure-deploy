@@ -1,5 +1,7 @@
 type name = string
+
 type substitution = string
+
 type msg = string
 
 type value =
