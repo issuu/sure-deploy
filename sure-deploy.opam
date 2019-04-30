@@ -8,6 +8,7 @@ build: [["dune" "build" "-p" name "-j" jobs]]
 depends: [
   "core" {>= "v0.11" & < "v0.13"}
   "async" {>= "v0.11" & < "v0.13"}
+  "async_ssl" {>= "v0.11" & < "v0.13"}
   "ppx_deriving_yojson" {>= "3.3" & < "4.0"}
   "dune" {build & > "1.4"}
   "cohttp-async" {>= "2.1.1"}
