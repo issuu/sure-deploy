@@ -15,7 +15,7 @@ FROM alpine:3.9
 ENTRYPOINT ["/usr/local/bin/sure-deploy"]
 WORKDIR /home/opam
 RUN apk update && \
-  apk add tzdata && \
+  apk add tzdata libffi libressl2.7-libcrypto libressl2.7-libssl && \
   adduser -D opam && \
   touch /home/opam/docker-compose.yml
 USER opam
