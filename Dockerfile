@@ -16,7 +16,10 @@ ENTRYPOINT ["/usr/local/bin/sure-deploy"]
 WORKDIR /home/opam
 RUN apk update && \
   apk add tzdata libffi libressl2.7-libcrypto libressl2.7-libssl && \
+  cp /usr/share/zoneinfo/UTC /etc/localtime && \
+  echo "UTC" > /etc/timezone && \
   adduser -D opam && \
-  touch /home/opam/docker-compose.yml
+  touch /home/opam/docker-compose.yml && \
+  apk del tzdata
 USER opam
 COPY --from=builder /home/opam/.opam/*/bin/sure-deploy /usr/local/bin/
