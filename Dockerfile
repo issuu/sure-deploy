@@ -19,7 +19,6 @@ RUN apk update && \
   cp /usr/share/zoneinfo/UTC /etc/localtime && \
   echo "UTC" > /etc/timezone && \
   adduser -D opam && \
-  touch /home/opam/docker-compose.yml && \
-  apk del tzdata
+  touch /home/opam/docker-compose.yml
 USER opam
 COPY --from=builder /home/opam/.opam/*/bin/sure-deploy /usr/local/bin/
