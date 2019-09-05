@@ -2,4 +2,5 @@
  (name sure_deploy)
  (libraries core async lib)
  (public_name sure-deploy)
- (preprocess (pps ppx_let)))
+ (preprocess
+  (pps ppx_let)))
