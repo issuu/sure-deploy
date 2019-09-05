@@ -55,7 +55,7 @@ let converge host port verbose stack timeout_seconds poll_interval =
             timeout_seconds
       | `Result () ->
           Log.Global.info "Stack '%a' has converged" Stack.pp stack;
-          Deferred.Or_error.return () )
+          Deferred.Or_error.return ())
 
 let match_spec_and_service
     :  Stack.t -> Lib.Composefile.service_spec list -> (Service.t * Image.t) list ->
@@ -73,8 +73,7 @@ let match_spec_and_service
               "Failed to find spec '%a' in deployed services"
               Service.pp
               name
-        | Some deployed_image -> Or_error.return @@ ((name, image, deployed_image) :: acc)
-    )
+        | Some deployed_image -> Or_error.return @@ ((name, image, deployed_image) :: acc))
   in
   let spec_count = List.length specs in
   let service_count = List.length service_images in
@@ -136,7 +135,7 @@ let verify host port verbose stack composefile =
                          Image.pp
                          desired
                          Image.pp
-                         deployed ) )
+                         deployed))
       in
       return @@ Log.Global.info "Swarm state and composefile match"
 

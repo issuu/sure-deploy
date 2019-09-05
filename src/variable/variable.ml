@@ -27,18 +27,18 @@ let substitute context template =
         | Unset_variable (n, subst) -> (
           match String.Map.find context n with
           | None -> Or_error.return @@ (subst :: acc)
-          | Some v -> Or_error.return @@ (v :: acc) )
+          | Some v -> Or_error.return @@ (v :: acc))
         | Unset_or_empty_variable (n, subst) -> (
           match String.Map.find context n with
           | None | Some "" -> Or_error.return @@ (subst :: acc)
-          | Some v -> Or_error.return @@ (v :: acc) )
+          | Some v -> Or_error.return @@ (v :: acc))
         | Unset_error_variable (n, msg) -> (
           match String.Map.find context n with
           | None -> Or_error.errorf "Error im template: '%s'" msg
-          | Some v -> Or_error.return @@ (v :: acc) )
+          | Some v -> Or_error.return @@ (v :: acc))
         | Unset_or_empty_error_variable (n, msg) -> (
           match String.Map.find context n with
           | None | Some "" -> Or_error.errorf "Error im template: '%s'" msg
-          | Some v -> Or_error.return @@ (v :: acc) ) )
+          | Some v -> Or_error.return @@ (v :: acc)))
   in
   resolved |> List.rev |> String.concat ~sep:"" |> return

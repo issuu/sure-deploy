@@ -82,7 +82,7 @@ end = struct
     registry : string option;
     name : string;
     tag : string option;
-    hash : string option
+    hash : string option;
   }
   [@@deriving eq]
 
@@ -92,7 +92,7 @@ end = struct
     | Some (name, rest) -> (
       match String.lsplit2 ~on:'@' rest with
       | None -> name, Some rest, None
-      | Some (tag, hash) -> name, Some tag, Some hash )
+      | Some (tag, hash) -> name, Some tag, Some hash)
 
   let of_string s =
     match String.lsplit2 ~on:'/' s with
@@ -109,7 +109,7 @@ end = struct
       | false ->
           let registry = None in
           let name, tag, hash = parse_name s in
-          {registry; name; tag; hash} )
+          {registry; name; tag; hash})
 
   let to_string {registry; name; tag; hash} =
     let registry_chunk =
@@ -123,7 +123,7 @@ end = struct
       | Some t -> (
         match hash with
         | None -> Printf.sprintf ":%s" t
-        | Some h -> Printf.sprintf ":%s@%s" t h )
+        | Some h -> Printf.sprintf ":%s@%s" t h)
     in
     Printf.sprintf "%s%s%s" registry_chunk name tag_chunk
 
@@ -172,7 +172,7 @@ type task_template = {container_spec : container_spec [@key "ContainerSpec"]}
 
 type spec = {
   name : service_name; [@key "Name"]
-  task_template : task_template [@key "TaskTemplate"]
+  task_template : task_template; [@key "TaskTemplate"]
 }
 [@@deriving of_yojson {strict = false}]
 
@@ -206,7 +206,7 @@ type update_status = {state : state [@key "State"]}
 type service_status = {
   id : string; [@key "ID"]
   spec : spec; [@key "Spec"]
-  update_status : update_status [@key "UpdateStatus"] [@default {state = Completed}]
+  update_status : update_status; [@key "UpdateStatus"] [@default {state = Completed}]
 }
 [@@deriving of_yojson {strict = false}]
 

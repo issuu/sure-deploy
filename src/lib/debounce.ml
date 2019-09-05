@@ -3,7 +3,7 @@ open Core
 
 type t = {
   mutable last_triggered : Time.t;
-  cooldown : Time.Span.t
+  cooldown : Time.Span.t;
 }
 
 let init ?(cooldown_ms = 2000.) () =

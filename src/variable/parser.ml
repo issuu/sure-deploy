@@ -23,7 +23,7 @@ let value = function
     | Some (Unset s) -> return @@ Types.Unset_variable (name, s)
     | Some (Unset_or_empty_error msg) ->
         return @@ Types.Unset_or_empty_error_variable (name, msg)
-    | Some (Unset_error msg) -> return @@ Types.Unset_error_variable (name, msg) )
+    | Some (Unset_error msg) -> return @@ Types.Unset_error_variable (name, msg))
 
 let prog : _ -> _ -> Types.value list Or_error.t =
  fun lex lexbuf ->
