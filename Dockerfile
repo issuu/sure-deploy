@@ -1,4 +1,4 @@
-FROM ocaml/opam2:alpine-3.10-ocaml-4.07 as builder
+FROM ocaml/opam2:alpine-3.10-ocaml-4.08 as builder
 ENV OPAMYES=1
 COPY sure-deploy.opam /home/opam/sure-deploy/
 RUN git -C /home/opam/opam-repository pull --quiet && \
@@ -6,7 +6,7 @@ RUN git -C /home/opam/opam-repository pull --quiet && \
   opam pin --no-action add sure-deploy /home/opam/sure-deploy && \
   opam depext sure-deploy && \
   opam install --deps-only sure-deploy && \
-  opam install ocamlformat.0.9
+  opam install ocamlformat.0.10
 COPY dune-project .ocamlformat src /home/opam/sure-deploy/
 RUN (cd /home/opam/sure-deploy; sudo chown -R opam .; opam exec -- dune build @fmt @install) && \
   opam install sure-deploy
