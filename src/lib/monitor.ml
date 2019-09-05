@@ -42,7 +42,7 @@ let wait_for_completion polling_interval swarm stack services =
                   n
                   Stack.pp
                   stack
-                  service_names );
+                  service_names);
         let%bind () = after polling_interval in
         return @@ `Repeat uncompleted
   in

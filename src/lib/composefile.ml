@@ -4,7 +4,7 @@ module Image = Swarm_types.Image
 
 type service_spec = {
   name : Service.t;
-  image : Image.t
+  image : Image.t;
 }
 
 let load_file : string -> Yaml.value Or_error.t =
@@ -27,7 +27,7 @@ let extract_service : string * Yaml.value -> service_spec Or_error.t =
     | Some _ ->
         Or_error.errorf
           "Definition of 'image' field in service '%s' has invalid type"
-          name )
+          name)
   | _ -> Or_error.errorf "Expected an object in definition of service '%s'" name
 
 let extract_services : Yaml.value -> service_spec list Or_error.t = function
@@ -38,7 +38,7 @@ let specs : Yaml.value -> service_spec list Or_error.t = function
   | `O top_level -> (
     match List.Assoc.find top_level ~equal:String.equal "services" with
     | None -> Or_error.errorf "No 'services' defined"
-    | Some services -> extract_services services )
+    | Some services -> extract_services services)
   | _ -> Or_error.errorf "Top level object expected"
 
 type context = string String.Map.t

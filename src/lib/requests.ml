@@ -41,7 +41,7 @@ let service_metadata swarm stack_name =
       with
       | Ok v -> Deferred.Or_error.return v
       | Error e ->
-          Deferred.Or_error.errorf "Parsing response failed with '%s' on '%s'" e body )
+          Deferred.Or_error.errorf "Parsing response failed with '%s' on '%s'" e body)
   | invalid -> Deferred.Or_error.errorf "Listing services failed with error %d" invalid
 
 let service_images swarm stack =
@@ -50,7 +50,7 @@ let service_images swarm stack =
   resp
   |> List.map ~f:(fun service ->
          ( Swarm_types.(service.spec.name),
-           Swarm_types.(service.spec.task_template.container_spec.image) ) )
+           Swarm_types.(service.spec.task_template.container_spec.image) ))
 
 let services swarm stack =
   let open Deferred.Or_error.Let_syntax in
@@ -73,7 +73,7 @@ let status swarm service_name =
       let%bind body = Body.to_string body in
       match body |> Yojson.Safe.from_string |> Swarm_types.service_status_of_yojson with
       | Ok service -> service.update_status.state |> Deferred.Or_error.return
-      | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e )
+      | Error e -> Deferred.Or_error.errorf "Parsing response failed with '%s'" e)
   | invalid -> Deferred.Or_error.errorf "Accessing status failed with error %d" invalid
 
 let finished swarm service_name =
@@ -99,6 +99,5 @@ let image_digest ~registry ~name ~tag =
       let%bind body = Body.to_string body in
       match body |> Yojson.Safe.from_string |> Swarm_types.image_manifest_of_yojson with
       | Ok {config} -> Deferred.Or_error.return config.digest
-      | Error e -> Deferred.Or_error.errorf "Parsing registry response failed on '%s'" e
-      )
+      | Error e -> Deferred.Or_error.errorf "Parsing registry response failed on '%s'" e)
   | invalid -> Deferred.Or_error.errorf "Accessing registry failed with error %d" invalid

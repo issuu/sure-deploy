@@ -3,4 +3,5 @@
 (library
  (name variable)
  (libraries core)
- (preprocess (pps ppx_let)))
+ (preprocess
+  (pps ppx_let)))
