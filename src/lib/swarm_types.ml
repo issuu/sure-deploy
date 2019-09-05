@@ -100,7 +100,7 @@ end = struct
         let registry = None in
         let name, tag, hash = parse_name s in
         {registry; name; tag; hash}
-    | Some (candidate, _) -> (
+    | Some (candidate, s) -> (
       match String.mem candidate '.' with
       | true ->
           let registry = Some candidate in
