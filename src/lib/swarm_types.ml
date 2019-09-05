@@ -70,7 +70,7 @@ module Image : sig
 
   val equal_nametag : t -> t -> bool
 
-  val of_yojson : Yojson.Safe.json -> (t, string) result
+  val of_yojson : Yojson.Safe.t -> (t, string) result
 
   val registry : t -> string option
 

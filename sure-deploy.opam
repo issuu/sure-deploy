@@ -14,6 +14,6 @@ depends: [
   "cohttp-async" {>= "2.1.1"}
   "cohttp" {>= "2.1.2"}
   "yaml" {>= "2.0.0"}
-  "yojson" {> "1.4" & < "1.6"}
+  "yojson" {>= "1.6" & < "2.0"}
 ]
-
+synopsis: "What `docker stack deploy` should actually have been"
