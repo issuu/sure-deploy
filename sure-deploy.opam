@@ -10,6 +10,7 @@ depends: [
   "async" {>= "v0.11" & < "v0.13"}
   "async_ssl" {>= "v0.11" & < "v0.13"}
   "ppx_deriving_yojson" {>= "3.3" & < "4.0"}
+  "ppx_inline_test" {with-test & >= "v0.11" & < "v0.13"}
   "dune" {build & > "1.7"}
   "cohttp-async" {>= "2.1.1"}
   "cohttp" {>= "2.1.2"}
