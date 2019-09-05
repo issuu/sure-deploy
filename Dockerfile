@@ -1,4 +1,4 @@
-FROM ocaml/opam2:alpine-3.9-ocaml-4.07 as builder
+FROM ocaml/opam2:alpine-3.10-ocaml-4.07 as builder
 ENV OPAMYES=1
 COPY sure-deploy.opam /home/opam/sure-deploy/
 RUN git -C /home/opam/opam-repository pull --quiet && \
@@ -11,7 +11,7 @@ COPY dune-project .ocamlformat src /home/opam/sure-deploy/
 RUN (cd /home/opam/sure-deploy; sudo chown -R opam .; opam exec -- dune build @fmt @install) && \
   opam install sure-deploy
 
-FROM alpine:3.9
+FROM alpine:3.10
 ENTRYPOINT ["/usr/local/bin/sure-deploy"]
 WORKDIR /home/opam
 RUN apk update && \
