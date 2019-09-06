@@ -111,6 +111,30 @@ end = struct
           let name, tag, hash = parse_name s in
           {registry; name; tag; hash})
 
+  let create ?registry ?tag ?hash name = {name; registry; tag; hash}
+
+  let%test "plain name" = equal (of_string "n") (create "n")
+
+  let%test "org name" = equal (of_string "org/n") (create "org/n")
+
+  let%test "registry name" =
+    equal (of_string "registry.tld/n") (create ~registry:"registry.tld" "n")
+
+  let%test "registry orgname" =
+    equal (of_string "registry.tld/org/n") (create ~registry:"registry.tld" "org/n")
+
+  let%test "name tag" = equal (of_string "n:t") (create ~tag:"t" "n")
+
+  let%test "org name tag" = equal (of_string "org/n:t") (create ~tag:"t" "org/n")
+
+  let%test "registry name tag" =
+    equal (of_string "registry.tld/n:t") (create ~registry:"registry.tld" ~tag:"t" "n")
+
+  let%test "registry orgname tag" =
+    equal
+      (of_string "registry.tld/org/n:t")
+      (create ~registry:"registry.tld" ~tag:"t" "org/n")
+
   let to_string {registry; name; tag; hash} =
     let registry_chunk =
       match registry with

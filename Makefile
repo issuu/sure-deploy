@@ -34,3 +34,7 @@ docker-push:
 .PHONY: format
 format:
 	dune build @fmt --auto-promote @install
+
+.PHONY: test
+test:
+	dune runtest --force
