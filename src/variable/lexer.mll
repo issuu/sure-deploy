@@ -7,7 +7,7 @@ let return = Or_error.return
 
 let varname = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '_' '0'-'9']*
 
-rule read_subst_variable buf =
+rule read_subst_variable =
   parse
   | varname as v ":-" ([^ '}']+ as subst) '}' { return @@ VARNAME (v, Some (Unset_or_empty subst)) }
   | varname as v '-' ([^ '}']+ as subst) '}' { return @@ VARNAME (v, Some (Unset subst)) }
@@ -19,7 +19,7 @@ rule read_subst_variable buf =
 
 and read_variable =
   parse
-  | '{' { read_subst_variable (Buffer.create 17) lexbuf }
+  | '{' { read_subst_variable lexbuf }
   | varname { return @@ VARNAME ((Lexing.lexeme lexbuf), None) }
   | eof { return @@ EOF }
 
