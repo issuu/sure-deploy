@@ -85,7 +85,7 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify host port verbose stack registryaccesstoken composefile =
+let verify host port verbose stack registryaccesstoken insecureregistry composefile =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
@@ -119,6 +119,7 @@ let verify host port verbose stack registryaccesstoken composefile =
                        ~name:(Image.name deployed)
                        ~tag:deployed_tag
                        ~registry_access_token:registryaccesstoken
+                       ~insecure_registry:insecureregistry
                    in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
@@ -126,6 +127,7 @@ let verify host port verbose stack registryaccesstoken composefile =
                        ~name:(Image.name desired)
                        ~tag:desired_tag
                        ~registry_access_token:registryaccesstoken
+                       ~insecure_registry:insecureregistry
                    in
                    match String.equal deployed_hash desired_hash with
                    | true -> Deferred.Or_error.return ()
@@ -186,13 +188,19 @@ let () =
             "--registry-access-token"
             (optional_with_default "" string)
             ~doc:" The access token for accessing the registry"
+        and insecureregistry =
+          flag
+            "--insecure-registry"
+            no_arg
+            ~doc:" Communicate with registry over http instead of https"
         and composefile =
           flag
             "--compose-file"
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
-        fun () -> verify host port verbose stack registryaccesstoken composefile])
+        fun () ->
+          verify host port verbose stack registryaccesstoken insecureregistry composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"
