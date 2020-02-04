@@ -86,7 +86,7 @@ end = struct
   }
   [@@deriving eq]
 
-  let parse_name s =
+  let parse_name_default_registry s =
     match String.lsplit2 ~on:':' s with
     | None -> s, None, None
     | Some (name, rest) -> (
@@ -94,24 +94,29 @@ end = struct
       | None -> name, Some rest, None
       | Some (tag, hash) -> name, Some tag, Some hash)
 
-  let of_string s =
-    match String.lsplit2 ~on:'/' s with
-    | None ->
-        let registry = None in
-        let name, tag, hash = parse_name s in
-        {registry; name; tag; hash}
-    | Some (candidate_registry, candidate_name) -> (
-      match String.mem candidate_registry '.' with
-      | true ->
-          let registry = Some candidate_registry in
-          let name, tag, hash = parse_name candidate_name in
-          {registry; name; tag; hash}
-      | false ->
-          let registry = None in
-          let name, tag, hash = parse_name s in
-          {registry; name; tag; hash})
+  let parse_name s =
+    match String.split ~on:'/' s with
+    (* Default Docker Registry *)
+    | [] ->
+        let name, tag, hash = parse_name_default_registry s in
+        None, name, tag, hash
+    (* Maybe a Custom Registry *)
+    | registry :: h ->
+        (* Check for localhost and or TLD *)
+        if String.is_substring ~substring:"localhost" registry
+           || String.is_substring ~substring:"." registry
+        then
+          let name, tag, hash = parse_name_default_registry (String.concat ~sep:"/" h) in
+          Some registry, name, tag, hash
+        else
+          let name, tag, hash = parse_name_default_registry s in
+          None, name, tag, hash
 
-  let create ?registry ?tag ?hash name = {name; registry; tag; hash}
+  let of_string s =
+    let registry, name, tag, hash = parse_name s in
+    {registry; name; tag; hash}
+
+  let create ?registry ?tag ?hash name = {registry; name; tag; hash}
 
   let%test "plain name" = equal (of_string "n") (create "n")
 
@@ -134,6 +139,19 @@ end = struct
     equal
       (of_string "registry.tld/org/n:t")
       (create ~registry:"registry.tld" ~tag:"t" "org/n")
+
+  let%test "registry with port orgname tag" =
+    equal
+      (of_string "registry.tld:5000/org/n:t")
+      (create ~registry:"registry.tld:5000" ~tag:"t" "org/n")
+
+  let%test "localhost registry with port orgname tag" =
+    equal
+      (of_string "localhost:5000/org/n:t")
+      (create ~registry:"localhost:5000" ~tag:"t" "org/n")
+
+  let%test "localhost registry with orgname tag" =
+    equal (of_string "localhost/org/n:t") (create ~registry:"localhost" ~tag:"t" "org/n")
 
   let to_string {registry; name; tag; hash} =
     let registry_chunk =

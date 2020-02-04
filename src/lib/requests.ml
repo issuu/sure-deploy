@@ -85,10 +85,16 @@ let finished swarm service_name =
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
 let image_digest ~registry ~name ~tag ~registry_access_token =
+  let host, port =
+    match String.rsplit2 ~on:':' registry with
+    | None -> registry, None
+    | Some (host, port) -> host, Some (int_of_string port)
+  in
   let url =
     Uri.make
       ~scheme:"https"
-      ~host:registry
+      ~host
+      ~port:(Option.value ~default:80 port)
       ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag)
       ()
   in
