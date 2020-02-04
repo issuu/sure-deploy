@@ -85,7 +85,7 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify host port verbose stack composefile =
+let verify host port verbose stack registryaccesstoken composefile =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
@@ -118,12 +118,14 @@ let verify host port verbose stack composefile =
                        ~registry:deployed_registry
                        ~name:(Image.name deployed)
                        ~tag:deployed_tag
+                       ~registry_access_token:registryaccesstoken
                    in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
                        ~registry:desired_registry
                        ~name:(Image.name desired)
                        ~tag:desired_tag
+                       ~registry_access_token:registryaccesstoken
                    in
                    match String.equal deployed_hash desired_hash with
                    | true -> Deferred.Or_error.return ()
@@ -179,13 +181,18 @@ let () =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
+        and registryaccesstoken =
+          flag
+            "--registry-access-token"
+            (optional_with_default "" string)
+            ~doc:" The access token for accessing the registry"
         and composefile =
           flag
             "--compose-file"
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
-        fun () -> verify host port verbose stack composefile])
+        fun () -> verify host port verbose stack registryaccesstoken composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"

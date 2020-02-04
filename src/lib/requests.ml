@@ -84,7 +84,7 @@ let finished swarm service_name =
 
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
-let image_digest ~registry ~name ~tag =
+let image_digest ~registry ~name ~tag ~registry_access_token =
   let url =
     Uri.make
       ~scheme:"https"
@@ -93,6 +93,15 @@ let image_digest ~registry ~name ~tag =
       ()
   in
   let headers = Cohttp.Header.init_with "Accept" v2_manifest in
+  let headers =
+    match registry_access_token with
+    | "" -> headers
+    | _ ->
+        Cohttp.Header.add
+          headers
+          "authorization"
+          (Printf.sprintf "Basic %s" registry_access_token)
+  in
   let%bind resp, body = Client.get ~headers url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
