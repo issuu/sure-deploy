@@ -26,7 +26,7 @@ let environment () =
              containing '='")
   >>= String.Map.of_alist_or_error
 
-let converge host port verbose stack timeout_seconds poll_interval =
+let converge ~verbose host port stack timeout_seconds poll_interval =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
@@ -85,7 +85,9 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify host port verbose stack registryaccesstoken insecureregistry composefile =
+let verify ~registry_access_token ~insecure_registry ~verbose host port stack
+    composefile
+  =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
@@ -115,19 +117,19 @@ let verify host port verbose stack registryaccesstoken insecureregistry composef
                    let desired_tag = Option.value ~default @@ Image.tag desired in
                    let%bind deployed_hash =
                      Lib.Requests.image_digest
+                       ~registry_access_token
+                       ~insecure_registry
                        ~registry:deployed_registry
                        ~name:(Image.name deployed)
                        ~tag:deployed_tag
-                       ~registry_access_token:registryaccesstoken
-                       ~insecure_registry:insecureregistry
                    in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
                        ~registry:desired_registry
                        ~name:(Image.name desired)
                        ~tag:desired_tag
-                       ~registry_access_token:registryaccesstoken
-                       ~insecure_registry:insecureregistry
+                       ~registry_access_token
+                       ~insecure_registry
                    in
                    match String.equal deployed_hash desired_hash with
                    | true -> Deferred.Or_error.return ()
@@ -169,7 +171,7 @@ let () =
             (optional_with_default (Time.Span.of_ms 500.) span_ms)
             ~doc:" Maximum time to wait for convergence"
         in
-        fun () -> converge host port verbose stack timeout poll])
+        fun () -> converge ~verbose host port stack timeout poll])
   in
   let verify =
     Command.async_or_error
@@ -183,12 +185,12 @@ let () =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
-        and registryaccesstoken =
+        and registry_access_token =
           flag
             "--registry-access-token"
-            (optional_with_default "" string)
+            (optional string)
             ~doc:" The access token for accessing the registry"
-        and insecureregistry =
+        and insecure_registry =
           flag
             "--insecure-registry"
             no_arg
@@ -200,7 +202,14 @@ let () =
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
         fun () ->
-          verify host port verbose stack registryaccesstoken insecureregistry composefile])
+          verify
+            ~registry_access_token
+            ~verbose
+            ~insecure_registry
+            host
+            port
+            stack
+            composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"

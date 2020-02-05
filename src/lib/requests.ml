@@ -84,15 +84,20 @@ let finished swarm service_name =
 
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
-let image_digest ~registry ~name ~tag ~registry_access_token ~insecure_registry =
+let image_digest ?(insecure_registry=false) ?(registry_access_token=None) ~registry ~name ~tag =
   let host, port =
     match String.rsplit2 ~on:':' registry with
     | None -> registry, None
     | Some (host, port) -> host, Some (int_of_string port)
   in
+  let scheme =
+    match insecure_registry with
+    | true -> "http"
+    | false -> "https"
+  in
   let url =
     Uri.make
-      ~scheme:(if insecure_registry then "http" else "https")
+      ~scheme
       ~host
       ~port:(Option.value ~default:80 port)
       ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag)
@@ -101,8 +106,8 @@ let image_digest ~registry ~name ~tag ~registry_access_token ~insecure_registry 
   let headers = Cohttp.Header.init_with "Accept" v2_manifest in
   let headers =
     match registry_access_token with
-    | "" -> headers
-    | _ ->
+    | None -> headers
+    | Some registry_access_token ->
         Cohttp.Header.add
           headers
           "authorization"
