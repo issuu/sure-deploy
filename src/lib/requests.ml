@@ -85,9 +85,9 @@ let finished swarm service_name =
 
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
-let image_digest ?(insecure_registry = false) ?(registry_access_token = None) ~image =
+let image_digest ~is_insecure_registry ?(registry_access_token = None) ~image =
   let scheme =
-    match insecure_registry with
+    match is_insecure_registry with
     | true -> "http"
     | false -> "https"
   in

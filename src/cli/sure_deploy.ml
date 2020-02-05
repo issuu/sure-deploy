@@ -85,7 +85,7 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify ~registry_access_token ~insecure_registry ~verbose host port stack composefile
+let verify ~registry_access_token ~insecure_registries ~verbose host port stack composefile
   =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
@@ -104,17 +104,19 @@ let verify ~registry_access_token ~insecure_registry ~verbose host port stack co
                match Image.equal_nametag desired deployed with
                | true -> Deferred.Or_error.return ()
                | false -> (
+                   let is_insecure_registry = (List.mem insecure_registries (Image.registry_full deployed) ~equal:String.equal) in
                    let%bind deployed_hash =
                      Lib.Requests.image_digest
                        ~image:deployed
                        ~registry_access_token
-                       ~insecure_registry
+                       ~is_insecure_registry
                    in
+                   let is_insecure_registry = (List.mem insecure_registries (Image.registry_full desired) ~equal:String.equal) in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
                        ~image:desired
                        ~registry_access_token
-                       ~insecure_registry
+                       ~is_insecure_registry
                    in
                    match String.equal deployed_hash desired_hash with
                    | true -> Deferred.Or_error.return ()
@@ -175,22 +177,26 @@ let () =
             "--registry-access-token"
             (optional string)
             ~doc:" The access token for accessing the registry"
-        and insecure_registry =
+        and insecureregistries =
           flag
-            "--insecure-registry"
-            no_arg
-            ~doc:" Communicate with registry over http instead of https"
+            "--insecure-registries"
+            (optional string)
+            ~doc:" List of insecure registries (separated by comma)"
         and composefile =
           flag
             "--compose-file"
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
+        let insecure_registries = match insecureregistries with 
+          | Some insecureregistries -> String.split ~on:',' insecureregistries
+          | _ -> []
+        in
         fun () ->
           verify
+            ~insecure_registries
             ~registry_access_token
             ~verbose
-            ~insecure_registry
             host
             port
             stack

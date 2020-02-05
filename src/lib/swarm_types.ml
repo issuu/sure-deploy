@@ -76,6 +76,8 @@ module Image : sig
 
   val registry_port : t -> int option
 
+  val registry_full: t -> string
+
   val name : t -> string
 
   val tag : t -> string
@@ -179,11 +181,12 @@ end = struct
   let%test "localhost registry with orgname tag" =
     equal (of_string "localhost/org/n:t") (create ~registry:"localhost" ~tag:"t" "org/n")
 
-  let to_string {registry; registry_port; name; tag; hash} =
-    let registry_chunk =
-      match (registry, registry_port) with
+  let print_full_registry registry registry_port =
+    match (registry, registry_port) with
       | registry, Some port -> Printf.sprintf "%s:%d/" registry port
       | registry, None -> Printf.sprintf "%s/" registry
+  let to_string {registry; registry_port; name; tag; hash} =
+    let registry_chunk = print_full_registry registry registry_port
     in
     let tag_chunk =
       match hash with
@@ -205,6 +208,8 @@ end = struct
   let registry {registry; _} = registry
 
   let registry_port {registry_port; _} = registry_port
+
+  let registry_full {registry; registry_port; _} = print_full_registry registry registry_port
 
   let tag {tag; _} = tag
 
