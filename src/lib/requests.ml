@@ -99,7 +99,7 @@ let image_digest ?(insecure_registry=false) ?(registry_access_token=None) ~regis
     Uri.make
       ~scheme
       ~host
-      ~port:(Option.value ~default:80 port)
+      ?port
       ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag)
       ()
   in
