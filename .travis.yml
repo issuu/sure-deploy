@@ -4,7 +4,7 @@ services:
 script:
 - make docker-image
 after_success:
-- if [[ "${TRAVIS_BRANCH}" == "master" ]]; then make docker-push; fi
+- if [[ "${TRAVIS_BRANCH}" == "master" && "${TRAVIS_PULL_REQUEST}" == "false"  ]]; then make docker-push; fi
 env:
   global:
   - secure: Pf344ATMvII7c3+3PaZx6Hj7AbDpKXLaLCZRBZUGw2FR5AowYX6bhgkkT+JWyou5Ijq0JUpDDgQWfMxQFg1muH1ocCAgsza4zuNMVAd29FOqOCaJCkKy20lkZlCFm1SvXkTYHwJhKUq9kdWIg2LSxB2rIbYP6gkNXT3iLSsrmOODDwkDsGcJPiEMN8igyfwjJEttsrotKbs12k03yCRVOyRRD9FfURLpPdW1s+8OE8HFf89xt4CEpVD7ABW/E05TlV6QS1xsGGddPtXcLJ6znAf0oAIreTUn7qGc0itsyf7bKuTvDhEWodZCgHXYZElGBOo/w5s6uS/TGhvTH9jheAFYsOpC5jr/iS7GJLm0wuwJXxsqGieFfyQRAY5K3LZKqm34D5UTU0FrLvZqIW85mqU2I5EawAoZNp9JLkhcfVOHre+WemP+U/w5vkU0Q0JuifsOIgVT7WK0Ostt5cIoL/YHrHYhUrVpHISQ+3eaHh6WcgeaoaxTnZJubWCsrk6P0Wje30ljjmmJeVCGD2xdelSMUlFdeEw3SLJ7TKX3nFLdO5m2LpWvIkcf1PKiSmNysv4NAzYeQL+0IO3r5R2rfbKKTIpiSyKPb4yDPdbcHD6zPVekkPNcVEe1kBdWxdY0SFjdkmKIbLfBg5FpjSTqy5lPBUrTHY67/5T+iYjrXOY=
