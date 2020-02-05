@@ -95,18 +95,18 @@ end = struct
       | Some (tag, hash) -> name, Some tag, Some hash)
 
   let parse_name s =
-    match String.split ~on:'/' s with
+    match String.lsplit2 ~on:'/' s with
     (* Default Docker Registry *)
-    | [] ->
+    | None ->
         let name, tag, hash = parse_name_default_registry s in
         None, name, tag, hash
     (* Maybe a Custom Registry *)
-    | registry :: h ->
+    | Some (registry, h) ->
         (* Check for localhost and or TLD *)
         if String.is_substring ~substring:"localhost" registry
            || String.is_substring ~substring:"." registry
         then
-          let name, tag, hash = parse_name_default_registry (String.concat ~sep:"/" h) in
+          let name, tag, hash = parse_name_default_registry h in
           Some registry, name, tag, hash
         else
           let name, tag, hash = parse_name_default_registry s in
