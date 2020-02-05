@@ -16,7 +16,7 @@ the project folder which will pin the project description, install all
 dependencies and build the source code:
 
 ```sh
-opam switch create ./ 4.05.0
+opam switch create ./ 4.08.1
 ```
 
 Building it with OPAM 1.2.x is possible as well but requires manual pinning.
