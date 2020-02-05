@@ -85,8 +85,7 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify ~registry_access_token ~insecure_registry ~verbose host port stack
-    composefile
+let verify ~registry_access_token ~insecure_registry ~verbose host port stack composefile
   =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
