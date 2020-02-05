@@ -104,29 +104,15 @@ let verify ~registry_access_token ~insecure_registry ~verbose host port stack co
                match Image.equal_nametag desired deployed with
                | true -> Deferred.Or_error.return ()
                | false -> (
-                   let default = "registry.hub.docker.com" in
-                   let deployed_registry =
-                     Option.value ~default @@ Image.registry deployed
-                   in
-                   let desired_registry =
-                     Option.value ~default @@ Image.registry desired
-                   in
-                   let default = "latest" in
-                   let deployed_tag = Option.value ~default @@ Image.tag deployed in
-                   let desired_tag = Option.value ~default @@ Image.tag desired in
                    let%bind deployed_hash =
                      Lib.Requests.image_digest
+                       ~image:deployed
                        ~registry_access_token
                        ~insecure_registry
-                       ~registry:deployed_registry
-                       ~name:(Image.name deployed)
-                       ~tag:deployed_tag
                    in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
-                       ~registry:desired_registry
-                       ~name:(Image.name desired)
-                       ~tag:desired_tag
+                       ~image:desired
                        ~registry_access_token
                        ~insecure_registry
                    in

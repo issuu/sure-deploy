@@ -8,6 +8,7 @@ module Headers = Cohttp.Header
 module Swarm = Swarm_types.Swarm
 module Stack = Swarm_types.Stack
 module Service = Swarm_types.Service
+module Image = Swarm_types.Image
 
 (* Docker supports a number of different APIs *)
 let api_version = "v1.24"
@@ -84,21 +85,14 @@ let finished swarm service_name =
 
 let v2_manifest = "application/vnd.docker.distribution.manifest.v2+json"
 
-let image_digest ?(insecure_registry = false) ?(registry_access_token = None) ~registry
-    ~name ~tag
-  =
-  let host, port =
-    match String.rsplit2 ~on:':' registry with
-    | None -> registry, None
-    | Some (host, port) -> host, Some (int_of_string port)
-  in
+let image_digest ?(insecure_registry = false) ?(registry_access_token = None) ~image =
   let scheme =
     match insecure_registry with
     | true -> "http"
     | false -> "https"
   in
   let url =
-    Uri.make ~scheme ~host ?port ~path:(Printf.sprintf "/v2/%s/manifests/%s" name tag) ()
+    Uri.make ~scheme ~host:(Image.registry image) ?port:(Image.registry_port image) ~path:(Printf.sprintf "/v2/%s/manifests/%s" (Image.name image) (Image.tag image)) ()
   in
   let headers = Cohttp.Header.init_with "Accept" v2_manifest in
   let headers =
