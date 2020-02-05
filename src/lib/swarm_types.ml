@@ -84,15 +84,16 @@ module Image : sig
 end = struct
   type t = {
     registry : string;
-    registry_port: int option;
+    registry_port : int option;
     name : string;
     tag : string;
     hash : string option;
   }
   [@@deriving eq]
 
-  let default_registry="registry.hub.docker.com"
-  let default_tag="latest"
+  let default_registry = "registry.hub.docker.com"
+
+  let default_tag = "latest"
 
   let parse_name_tag_hash s =
     match String.lsplit2 ~on:':' s with
@@ -117,8 +118,8 @@ end = struct
           let name, tag, hash = parse_name_tag_hash h in
           (* Custom registry could use a custom port *)
           match String.lsplit2 ~on:':' registry with
-            | None -> registry, None, name, tag, hash
-            | Some (registry, port) -> registry, Some (int_of_string port), name, tag, hash
+          | None -> registry, None, name, tag, hash
+          | Some (registry, port) -> registry, Some (int_of_string port), name, tag, hash
         else
           let name, tag, hash = parse_name_tag_hash s in
           default_registry, None, name, tag, hash
@@ -128,21 +129,20 @@ end = struct
     {registry; registry_port; name; tag; hash}
 
 
-  let create ?registry ?registry_port ?tag ?hash name = {
-    registry=(
-      match registry with 
+  let create ?registry ?registry_port ?tag ?hash name =
+    {
+      registry=
+        (match registry with 
         | Some registry -> registry
-        | _ -> default_registry
-    );
-    registry_port;
-    name; 
-    tag=(
-      match tag with
+        | _ -> default_registry);
+      registry_port;
+      name; 
+      tag=
+        (match tag with
         | Some tag -> tag
-        | None -> default_tag
-    );
-    hash
-  }
+        | None -> default_tag);
+      hash
+    }
   
 
 
@@ -182,7 +182,7 @@ end = struct
     equal (of_string "localhost/org/n:t") (create ~registry:"localhost" ~tag:"t" "org/n")
 
   let print_full_registry registry registry_port =
-    match (registry, registry_port) with
+    match registry, registry_port with
       | registry, Some port -> Printf.sprintf "%s:%d/" registry port
       | registry, None -> Printf.sprintf "%s/" registry
   let to_string {registry; registry_port; name; tag; hash} =
