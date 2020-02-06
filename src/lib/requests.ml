@@ -92,7 +92,12 @@ let image_digest ~is_insecure_registry ?(registry_access_token = None) ~image =
     | false -> "https"
   in
   let url =
-    Uri.make ~scheme ~host:(Image.registry image) ?port:(Image.registry_port image) ~path:(Printf.sprintf "/v2/%s/manifests/%s" (Image.name image) (Image.tag image)) ()
+    Uri.make
+      ~scheme
+      ~host:(Image.registry image)
+      ?port:(Image.registry_port image)
+      ~path:(Printf.sprintf "/v2/%s/manifests/%s" (Image.name image) (Image.tag image))
+      ()
   in
   let headers = Cohttp.Header.init_with "Accept" v2_manifest in
   let headers =
