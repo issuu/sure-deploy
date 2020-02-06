@@ -1,4 +1,5 @@
 open Core
+module SSLConfig = Conduit_async.V2.Ssl.Config
 
 module type Identifier = sig
   type t
@@ -207,15 +208,15 @@ end
 module Swarm : sig
   type t
 
-  val of_host_and_port : string * int -> t
+  val of_host_and_port_and_ssl_config : string * int * SSLConfig.t option -> t
 
-  val to_host_and_port : t -> string * int
+  val to_host_and_port_and_ssl_config : t -> string * int * SSLConfig.t option
 end = struct
-  type t = string * int
+  type t = string * int * SSLConfig.t option
 
-  let of_host_and_port = Fn.id
+  let of_host_and_port_and_ssl_config = Fn.id
 
-  let to_host_and_port = Fn.id
+  let to_host_and_port_and_ssl_config = Fn.id
 end
 
 type service_name = Service.t
