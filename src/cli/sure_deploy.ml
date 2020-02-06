@@ -177,20 +177,16 @@ let () =
             "--registry-access-token"
             (optional string)
             ~doc:" The access token for accessing the registry"
-        and insecureregistries =
+        and insecure_registries =
           flag
             "--insecure-registries"
-            (optional string)
+            (listed string)
             ~doc:" List of insecure registries (separated by comma)"
         and composefile =
           flag
             "--compose-file"
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
-        in
-        let insecure_registries = match insecureregistries with 
-          | Some insecureregistries -> String.split ~on:',' insecureregistries
-          | _ -> []
         in
         fun () ->
           verify
