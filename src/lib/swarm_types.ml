@@ -129,18 +129,12 @@ end = struct
     {registry; registry_port; name; tag; hash}
 
 
-  let create ?registry ?registry_port ?tag ?hash name =
+  let create ?(registry = default_registry) ?registry_port ?(tag = default_tag) ?hash name =
     {
-      registry=
-        (match registry with 
-        | Some registry -> registry
-        | _ -> default_registry);
+      registry;
       registry_port;
       name; 
-      tag=
-        (match tag with
-        | Some tag -> tag
-        | None -> default_tag);
+      tag;
       hash
     }
   
