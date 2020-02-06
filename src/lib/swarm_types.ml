@@ -76,7 +76,7 @@ module Image : sig
 
   val registry_port : t -> int option
 
-  val registry_full: t -> string
+  val registry_full : t -> string
 
   val name : t -> string
 
@@ -128,17 +128,10 @@ end = struct
     let registry, registry_port, name, tag, hash = parse_registry_port_name_tag_hash s in
     {registry; registry_port; name; tag; hash}
 
-
-  let create ?(registry = default_registry) ?registry_port ?(tag = default_tag) ?hash name =
-    {
-      registry;
-      registry_port;
-      name; 
-      tag;
-      hash
-    }
-  
-
+  let create ?(registry = default_registry) ?registry_port ?(tag = default_tag) ?hash
+      name
+    =
+    {registry; registry_port; name; tag; hash}
 
   let%test "plain name" = equal (of_string "n") (create "n")
 
@@ -177,11 +170,11 @@ end = struct
 
   let print_full_registry registry registry_port =
     match registry, registry_port with
-      | registry, Some port -> Printf.sprintf "%s:%d/" registry port
-      | registry, None -> Printf.sprintf "%s/" registry
+    | registry, Some port -> Printf.sprintf "%s:%d/" registry port
+    | registry, None -> Printf.sprintf "%s/" registry
+
   let to_string {registry; registry_port; name; tag; hash} =
-    let registry_chunk = print_full_registry registry registry_port
-    in
+    let registry_chunk = print_full_registry registry registry_port in
     let tag_chunk =
       match hash with
       | None -> Printf.sprintf ":%s" tag
@@ -203,7 +196,8 @@ end = struct
 
   let registry_port {registry_port; _} = registry_port
 
-  let registry_full {registry; registry_port; _} = print_full_registry registry registry_port
+  let registry_full {registry; registry_port; _} =
+    print_full_registry registry registry_port
 
   let tag {tag; _} = tag
 
