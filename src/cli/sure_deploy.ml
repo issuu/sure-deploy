@@ -85,7 +85,14 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify ~registry_access_token ~insecure_registries ~verbose host port stack composefile
+let is_insecure_registry image insecure_registries =
+  List.mem
+    ~equal:String.equal
+    insecure_registries
+    (Image.registry_full image)
+
+let verify ~registry_access_token ~insecure_registries ~verbose host port stack
+    composefile
   =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
@@ -104,19 +111,17 @@ let verify ~registry_access_token ~insecure_registries ~verbose host port stack 
                match Image.equal_nametag desired deployed with
                | true -> Deferred.Or_error.return ()
                | false -> (
-                   let is_insecure_registry = (List.mem insecure_registries (Image.registry_full deployed) ~equal:String.equal) in
                    let%bind deployed_hash =
                      Lib.Requests.image_digest
                        ~image:deployed
                        ~registry_access_token
-                       ~is_insecure_registry
+                       ~is_insecure_registry:(is_insecure_registry deployed insecure_registries)
                    in
-                   let is_insecure_registry = (List.mem insecure_registries (Image.registry_full desired) ~equal:String.equal) in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
                        ~image:desired
                        ~registry_access_token
-                       ~is_insecure_registry
+                       ~is_insecure_registry:(is_insecure_registry desired insecure_registries)
                    in
                    match String.equal deployed_hash desired_hash with
                    | true -> Deferred.Or_error.return ()
