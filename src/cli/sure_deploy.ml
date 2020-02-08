@@ -26,6 +26,9 @@ let environment () =
              containing '='")
   >>= String.Map.of_alist_or_error
 
+let registry_access_value =
+  Command.Arg_type.create (fun s -> String.lsplit2_exn s ~on:'=')
+
 let converge ~verbose host port stack timeout_seconds poll_interval =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
@@ -88,7 +91,15 @@ let match_spec_and_service
 let is_insecure_registry image insecure_registries =
   List.mem ~equal:String.equal insecure_registries (Image.registry_full image)
 
-let verify ~registry_access_token ~insecure_registries ~verbose host port stack
+let maybe_find_registry_access_token registry_access_token_mappings image =
+  match
+    List.find registry_access_token_mappings ~f:(fun (registry, _) ->
+        String.equal registry (Image.registry_full image))
+  with
+  | None -> None
+  | Some (_, access_token) -> Some access_token
+
+let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
     composefile
   =
   let open Deferred.Or_error.Let_syntax in
@@ -111,14 +122,18 @@ let verify ~registry_access_token ~insecure_registries ~verbose host port stack
                    let%bind deployed_hash =
                      Lib.Requests.image_digest
                        ~image:deployed
-                       ~registry_access_token
+                       ~registry_access_token:
+                         (maybe_find_registry_access_token
+                            registry_access_tokens
+                            deployed)
                        ~is_insecure_registry:
                          (is_insecure_registry deployed insecure_registries)
                    in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
                        ~image:desired
-                       ~registry_access_token
+                       ~registry_access_token:
+                         (maybe_find_registry_access_token registry_access_tokens desired)
                        ~is_insecure_registry:
                          (is_insecure_registry desired insecure_registries)
                    in
@@ -176,11 +191,13 @@ let () =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
-        and registry_access_token =
+        and registry_access_tokens =
           flag
-            "--registry-access-token"
-            (optional string)
-            ~doc:" The access token for accessing the registry"
+            "--registry-access"
+            (listed registry_access_value)
+            ~doc:
+              " A list of registries and their access token (e.g. \
+               localhost:5000=myaccesstoken)"
         and insecure_registries =
           flag
             "--insecure-registries"
@@ -195,7 +212,7 @@ let () =
         fun () ->
           verify
             ~insecure_registries
-            ~registry_access_token
+            ~registry_access_tokens
             ~verbose
             host
             port
