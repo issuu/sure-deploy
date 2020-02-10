@@ -12,11 +12,11 @@
 (package
   (name sure-deploy)
   (depends
-    (core (and (>= v0.11) (< v0.13)))
-    (async (and (>= v0.11) (< v0.13)))
-    (async_ssl (and (>= v0.11) (< v0.13)))
+    (core (and (>= v0.11) (< v0.14)))
+    (async (and (>= v0.11) (< v0.14)))
+    (async_ssl (and (>= v0.11) (< v0.14)))
     (ppx_deriving_yojson (and (>= 3.3) (< 4.0)))
-    (ppx_inline_test (and :with-test (>= v0.11) (< v0.13)))
+    (ppx_inline_test (and :with-test (>= v0.11) (< v0.14)))
     (cohttp-async (>= 2.1.1))
     (cohttp (>= 2.1.2))
     (yaml (>= 2.0.0))

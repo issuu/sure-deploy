@@ -9,11 +9,11 @@ doc: "https://issuu.github.io/sure-deploy/"
 bug-reports: "https://github.com/issuu/sure-deploy/issues"
 depends: [
   "dune" {>= "1.11"}
-  "core" {>= "v0.11" & < "v0.13"}
-  "async" {>= "v0.11" & < "v0.13"}
-  "async_ssl" {>= "v0.11" & < "v0.13"}
+  "core" {>= "v0.11" & < "v0.14"}
+  "async" {>= "v0.11" & < "v0.14"}
+  "async_ssl" {>= "v0.11" & < "v0.14"}
   "ppx_deriving_yojson" {>= "3.3" & < "4.0"}
-  "ppx_inline_test" {with-test & >= "v0.11" & < "v0.13"}
+  "ppx_inline_test" {with-test & >= "v0.11" & < "v0.14"}
   "cohttp-async" {>= "2.1.1"}
   "cohttp" {>= "2.1.2"}
   "yaml" {>= "2.0.0"}
