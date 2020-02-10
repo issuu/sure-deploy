@@ -91,13 +91,7 @@ let match_spec_and_service
 let is_insecure_registry image insecure_registries =
   List.mem ~equal:String.equal insecure_registries (Image.registry_full image)
 
-let find_registry_access_token registry_access_token_mappings image =
-  match
-    List.find registry_access_token_mappings ~f:(fun (registry, _) ->
-        String.equal registry (Image.registry_full image))
-  with
-  | None -> None
-  | Some (_, access_token) -> Some access_token
+let find_registry_access_token list image = List.Assoc.find ~equal:String.equal list (Image.registry_full image)
 
 let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
     composefile
