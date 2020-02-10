@@ -11,15 +11,13 @@ should've been.
 As such it uses `opam` files to contain the dependencies and uses `jbuilder` to
 build the executable.
 
-With OPAM 2 (recommended) it is simply a matter of creating a local switch in
+With OPAM 2 it is simply a matter of creating a local switch in
 the project folder which will pin the project description, install all
 dependencies and build the source code:
 
 ```sh
 opam switch create ./ 4.08.1
 ```
-
-Building it with OPAM 1.2.x is possible as well but requires manual pinning.
 
 ## Usage
 
