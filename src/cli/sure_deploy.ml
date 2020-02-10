@@ -26,8 +26,7 @@ let environment () =
              containing '='")
   >>= String.Map.of_alist_or_error
 
-let registry_access_value =
-  Command.Arg_type.create (String.lsplit2_exn ~on:'=')
+let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
 let converge ~verbose host port stack timeout_seconds poll_interval =
   set_verbose verbose;
@@ -91,7 +90,8 @@ let match_spec_and_service
 let is_insecure_registry image insecure_registries =
   List.mem ~equal:String.equal insecure_registries (Image.registry_full image)
 
-let find_registry_access_token list image = List.Assoc.find ~equal:String.equal list (Image.registry_full image)
+let find_registry_access_token list image =
+  List.Assoc.find ~equal:String.equal list (Image.registry_full image)
 
 let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
     composefile
@@ -117,9 +117,7 @@ let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
                      Lib.Requests.image_digest
                        ~image:deployed
                        ~registry_access_token:
-                         (find_registry_access_token
-                            registry_access_tokens
-                            deployed)
+                         (find_registry_access_token registry_access_tokens deployed)
                        ~is_insecure_registry:
                          (is_insecure_registry deployed insecure_registries)
                    in
