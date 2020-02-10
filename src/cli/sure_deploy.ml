@@ -91,7 +91,7 @@ let match_spec_and_service
 let is_insecure_registry image insecure_registries =
   List.mem ~equal:String.equal insecure_registries (Image.registry_full image)
 
-let maybe_find_registry_access_token registry_access_token_mappings image =
+let find_registry_access_token registry_access_token_mappings image =
   match
     List.find registry_access_token_mappings ~f:(fun (registry, _) ->
         String.equal registry (Image.registry_full image))
@@ -123,7 +123,7 @@ let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
                      Lib.Requests.image_digest
                        ~image:deployed
                        ~registry_access_token:
-                         (maybe_find_registry_access_token
+                         (find_registry_access_token
                             registry_access_tokens
                             deployed)
                        ~is_insecure_registry:
@@ -133,7 +133,7 @@ let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
                      Lib.Requests.image_digest
                        ~image:desired
                        ~registry_access_token:
-                         (maybe_find_registry_access_token registry_access_tokens desired)
+                         (find_registry_access_token registry_access_tokens desired)
                        ~is_insecure_registry:
                          (is_insecure_registry desired insecure_registries)
                    in
