@@ -27,7 +27,7 @@ let environment () =
   >>= String.Map.of_alist_or_error
 
 let registry_access_value =
-  Command.Arg_type.create (fun s -> String.lsplit2_exn s ~on:'=')
+  Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
 let converge ~verbose host port stack timeout_seconds poll_interval =
   set_verbose verbose;
