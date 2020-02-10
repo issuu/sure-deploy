@@ -26,7 +26,9 @@ let environment () =
              containing '='")
   >>= String.Map.of_alist_or_error
 
-let converge host port verbose stack timeout_seconds poll_interval =
+let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
+
+let converge ~verbose host port stack timeout_seconds poll_interval =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
@@ -85,7 +87,15 @@ let match_spec_and_service
         service_count
         spec_count
 
-let verify host port verbose stack composefile =
+let is_insecure_registry image insecure_registries =
+  List.mem ~equal:String.equal insecure_registries (Image.registry_full image)
+
+let find_registry_access_token list image =
+  List.Assoc.find ~equal:String.equal list (Image.registry_full image)
+
+let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
+    composefile
+  =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port (host, port) in
@@ -103,27 +113,21 @@ let verify host port verbose stack composefile =
                match Image.equal_nametag desired deployed with
                | true -> Deferred.Or_error.return ()
                | false -> (
-                   let default = "registry.hub.docker.com" in
-                   let deployed_registry =
-                     Option.value ~default @@ Image.registry deployed
-                   in
-                   let desired_registry =
-                     Option.value ~default @@ Image.registry desired
-                   in
-                   let default = "latest" in
-                   let deployed_tag = Option.value ~default @@ Image.tag deployed in
-                   let desired_tag = Option.value ~default @@ Image.tag desired in
                    let%bind deployed_hash =
                      Lib.Requests.image_digest
-                       ~registry:deployed_registry
-                       ~name:(Image.name deployed)
-                       ~tag:deployed_tag
+                       ~image:deployed
+                       ~registry_access_token:
+                         (find_registry_access_token registry_access_tokens deployed)
+                       ~is_insecure_registry:
+                         (is_insecure_registry deployed insecure_registries)
                    in
                    let%bind desired_hash =
                      Lib.Requests.image_digest
-                       ~registry:desired_registry
-                       ~name:(Image.name desired)
-                       ~tag:desired_tag
+                       ~image:desired
+                       ~registry_access_token:
+                         (find_registry_access_token registry_access_tokens desired)
+                       ~is_insecure_registry:
+                         (is_insecure_registry desired insecure_registries)
                    in
                    match String.equal deployed_hash desired_hash with
                    | true -> Deferred.Or_error.return ()
@@ -165,7 +169,7 @@ let () =
             (optional_with_default (Time.Span.of_ms 500.) span_ms)
             ~doc:" Maximum time to wait for convergence"
         in
-        fun () -> converge host port verbose stack timeout poll])
+        fun () -> converge ~verbose host port stack timeout poll])
   in
   let verify =
     Command.async_or_error
@@ -179,13 +183,33 @@ let () =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
+        and registry_access_tokens =
+          flag
+            "--registry-access"
+            (listed registry_access_value)
+            ~doc:
+              " A list of registries and their access token (e.g. \
+               localhost:5000=myaccesstoken)"
+        and insecure_registries =
+          flag
+            "--insecure-registries"
+            (listed string)
+            ~doc:" List of insecure registries (separated by comma)"
         and composefile =
           flag
             "--compose-file"
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
-        fun () -> verify host port verbose stack composefile])
+        fun () ->
+          verify
+            ~insecure_registries
+            ~registry_access_tokens
+            ~verbose
+            host
+            port
+            stack
+            composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"

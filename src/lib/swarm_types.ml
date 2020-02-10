@@ -72,46 +72,66 @@ module Image : sig
 
   val of_yojson : Yojson.Safe.t -> (t, string) result
 
-  val registry : t -> string option
+  val registry : t -> string
+
+  val registry_port : t -> int option
+
+  val registry_full : t -> string
 
   val name : t -> string
 
-  val tag : t -> string option
+  val tag : t -> string
 end = struct
   type t = {
-    registry : string option;
+    registry : string;
+    registry_port : int option;
     name : string;
-    tag : string option;
+    tag : string;
     hash : string option;
   }
   [@@deriving eq]
 
-  let parse_name s =
+  let default_registry = "registry.hub.docker.com"
+
+  let default_tag = "latest"
+
+  let parse_name_tag_hash s =
     match String.lsplit2 ~on:':' s with
-    | None -> s, None, None
+    | None -> s, default_tag, None
     | Some (name, rest) -> (
       match String.lsplit2 ~on:'@' rest with
-      | None -> name, Some rest, None
-      | Some (tag, hash) -> name, Some tag, Some hash)
+      | None -> name, rest, None
+      | Some (tag, hash) -> name, tag, Some hash)
+
+  let parse_registry_port_name_tag_hash s =
+    match String.lsplit2 ~on:'/' s with
+    (* Default Docker Registry *)
+    | None ->
+        let name, tag, hash = parse_name_tag_hash s in
+        default_registry, None, name, tag, hash
+    (* Maybe a Custom Registry *)
+    | Some (registry, h) ->
+        (* Check for localhost and or TLD *)
+        if String.is_substring ~substring:"localhost" registry
+           || String.is_substring ~substring:"." registry
+        then
+          let name, tag, hash = parse_name_tag_hash h in
+          (* Custom registry could use a custom port *)
+          match String.lsplit2 ~on:':' registry with
+          | None -> registry, None, name, tag, hash
+          | Some (registry, port) -> registry, Some (int_of_string port), name, tag, hash
+        else
+          let name, tag, hash = parse_name_tag_hash s in
+          default_registry, None, name, tag, hash
 
   let of_string s =
-    match String.lsplit2 ~on:'/' s with
-    | None ->
-        let registry = None in
-        let name, tag, hash = parse_name s in
-        {registry; name; tag; hash}
-    | Some (candidate_registry, candidate_name) -> (
-      match String.mem candidate_registry '.' with
-      | true ->
-          let registry = Some candidate_registry in
-          let name, tag, hash = parse_name candidate_name in
-          {registry; name; tag; hash}
-      | false ->
-          let registry = None in
-          let name, tag, hash = parse_name s in
-          {registry; name; tag; hash})
+    let registry, registry_port, name, tag, hash = parse_registry_port_name_tag_hash s in
+    {registry; registry_port; name; tag; hash}
 
-  let create ?registry ?tag ?hash name = {name; registry; tag; hash}
+  let create ?(registry = default_registry) ?registry_port ?(tag = default_tag) ?hash
+      name
+    =
+    {registry; registry_port; name; tag; hash}
 
   let%test "plain name" = equal (of_string "n") (create "n")
 
@@ -135,19 +155,30 @@ end = struct
       (of_string "registry.tld/org/n:t")
       (create ~registry:"registry.tld" ~tag:"t" "org/n")
 
-  let to_string {registry; name; tag; hash} =
-    let registry_chunk =
-      match registry with
-      | Some r -> Printf.sprintf "%s/" r
-      | None -> ""
-    in
+  let%test "registry with port orgname tag" =
+    equal
+      (of_string "registry.tld:5000/org/n:t")
+      (create ~registry:"registry.tld" ~registry_port:5000 ~tag:"t" "org/n")
+
+  let%test "localhost registry with port orgname tag" =
+    equal
+      (of_string "localhost:5000/org/n:t")
+      (create ~registry:"localhost" ~registry_port:5000 ~tag:"t" "org/n")
+
+  let%test "localhost registry with orgname tag" =
+    equal (of_string "localhost/org/n:t") (create ~registry:"localhost" ~tag:"t" "org/n")
+
+  let print_full_registry registry registry_port =
+    match registry, registry_port with
+    | registry, Some port -> Printf.sprintf "%s:%d/" registry port
+    | registry, None -> Printf.sprintf "%s/" registry
+
+  let to_string {registry; registry_port; name; tag; hash} =
+    let registry_chunk = print_full_registry registry registry_port in
     let tag_chunk =
-      match tag with
-      | None -> ""
-      | Some t -> (
-        match hash with
-        | None -> Printf.sprintf ":%s" t
-        | Some h -> Printf.sprintf ":%s@%s" t h)
+      match hash with
+      | None -> Printf.sprintf ":%s" tag
+      | Some hash -> Printf.sprintf ":%s@%s" tag hash
     in
     Printf.sprintf "%s%s%s" registry_chunk name tag_chunk
 
@@ -162,6 +193,11 @@ end = struct
   let equal_nametag a b = equal (basename a) (basename b)
 
   let registry {registry; _} = registry
+
+  let registry_port {registry_port; _} = registry_port
+
+  let registry_full {registry; registry_port; _} =
+    print_full_registry registry registry_port
 
   let tag {tag; _} = tag
 
