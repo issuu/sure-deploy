@@ -154,12 +154,12 @@ let construct_ssl_config cert cacert key =
   match cert, cacert, key with
   | Some crt_file, Some ca_file, Some key_file ->
       Some (SSLConfig.create ~crt_file ~ca_file ~key_file ())
+  | _ -> None
+
+let verify_ssl_config ssl_config =
+  match ssl_config with
   | None, None, None -> None
-  | _ ->
-      Log.Global.info
-        "All the flags 'cert', 'cacert' an 'key' must be statisfied. Daemon \
-         communication will be done via http instead of https.";
-      None
+  | _ -> Some (Deferred.Or_error.error_string "All the flags 'cert', 'cacert' an 'key' must be statisfied.")
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
@@ -190,8 +190,12 @@ let () =
             (optional_with_default (Time.Span.of_ms 500.) span_ms)
             ~doc:" Maximum time to wait for convergence"
         in
-        let ssl_config = construct_ssl_config cert ca_cert key in
-        fun () -> converge ~verbose ~ssl_config host port stack timeout poll])
+        fun () ->
+        match verify_ssl_config (cert, ca_cert, key) with
+        | Some error ->  error
+        | None ->
+          converge ~verbose ~ssl_config:(construct_ssl_config cert ca_cert key) host port stack timeout poll])
+        
   in
   let verify =
     Command.async_or_error
@@ -226,17 +230,19 @@ let () =
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
-        let ssl_config = construct_ssl_config cert ca_cert key in
         fun () ->
-          verify
-            ~insecure_registries
-            ~registry_access_tokens
-            ~ssl_config
-            ~verbose
-            host
-            port
-            stack
-            composefile])
+        match verify_ssl_config (cert, ca_cert, key) with
+        | Some error -> error
+        | None ->
+            verify
+              ~insecure_registries
+              ~registry_access_tokens
+              ~ssl_config:(construct_ssl_config cert ca_cert key)
+              ~verbose
+              host
+              port
+              stack
+              composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"
