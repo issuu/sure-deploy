@@ -39,7 +39,7 @@ let (cert_flag, ca_cert_flag, key_flag) =
 
 let converge ~verbose ~ssl_config host port stack timeout_seconds poll_interval =
   set_verbose verbose;
-  let swarm = Swarm.of_host_and_port_and_ssl_config (host, port, ssl_config) in
+  let swarm = Swarm.of_host_and_port ?ssl_config (host, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
   let open Deferred.Or_error.Let_syntax in
   match%bind Lib.Requests.services swarm stack with
@@ -107,7 +107,7 @@ let verify ~registry_access_tokens ~insecure_registries ~verbose ~ssl_config hos
   =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
-  let swarm = Swarm.of_host_and_port_and_ssl_config (host, port, ssl_config) in
+  let swarm = Swarm.of_host_and_port ?ssl_config (host, port) in
   let%bind env = Deferred.return @@ environment () in
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e

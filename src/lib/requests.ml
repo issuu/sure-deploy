@@ -22,22 +22,12 @@ let filter_for_stack stack_name =
 
 let filter stack_name = stack_name |> filter_for_stack |> Yojson.Safe.to_string
 
-let get_swarm_scheme = function
-  | None -> "http"
-  | Some _ -> "https"
-
 let service_metadata swarm stack_name =
-  let host, port, ssl_config = Swarm.to_host_and_port_and_ssl_config swarm in
   let url =
-    Uri.make
-      ~scheme:(get_swarm_scheme ssl_config)
-      ~host
-      ~port
-      ~path:(Printf.sprintf "/%s/services" api_version)
-      ()
+    Swarm.uri swarm (Printf.sprintf "/%s/services" api_version)
     |> (Fn.flip Uri.add_query_param') ("filters", filter stack_name)
   in
-  let%bind resp, body = Client.get ?ssl_config url in
+  let%bind resp, body = Swarm.get swarm url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
       let%bind body = Body.to_string body in
@@ -63,16 +53,8 @@ let services swarm stack =
   resp |> List.map ~f:fst
 
 let status swarm service_name =
-  let host, port, ssl_config = Swarm.to_host_and_port_and_ssl_config swarm in
-  let url =
-    Uri.make
-      ~scheme:(get_swarm_scheme ssl_config)
-      ~host
-      ~port
-      ~path:(Printf.sprintf "/%s/services/%a" api_version Service.pp service_name)
-      ()
-  in
-  let%bind resp, body = Client.get ?ssl_config url in
+  let url = Swarm.uri swarm (Printf.sprintf "/%s/services/%a" api_version Service.pp service_name) in
+  let%bind resp, body = Swarm.get swarm url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
       let%bind body = Body.to_string body in
