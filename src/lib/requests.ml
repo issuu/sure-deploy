@@ -22,8 +22,7 @@ let filter_for_stack stack_name =
 
 let filter stack_name = stack_name |> filter_for_stack |> Yojson.Safe.to_string
 
-let get_swarm_scheme ssl_config =
-  match ssl_config with
+let get_swarm_scheme = function
   | None -> "http"
   | Some _ -> "https"
 
