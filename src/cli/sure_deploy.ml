@@ -29,6 +29,12 @@ let environment () =
 
 let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
+let (cert_flag, ca_cert_flag, key_flag) =
+  Command.Param.(flag "--cert" (optional string) ~doc:" Path to the vertificate"),
+  Command.Param.(flag "--cacert" (optional string)
+            ~doc:" Path to the certificate to verify the peer"),
+  Command.Param.(flag "--key" (optional string) ~doc:" Path to the key file")
+
 let converge ~verbose ~ssl_config host port stack timeout_seconds poll_interval =
   set_verbose verbose;
   let swarm = Swarm.of_host_and_port_and_ssl_config (host, port, ssl_config) in
@@ -144,7 +150,7 @@ let verify ~registry_access_tokens ~insecure_registries ~verbose ~ssl_config hos
       in
       return @@ Log.Global.info "Swarm state and composefile match"
 
-let maybe_construct_ssl_config cert cacert key =
+let construct_ssl_config cert cacert key =
   match cert, cacert, key with
   | Some crt_file, Some ca_file, Some key_file ->
       Some (SSLConfig.create ~crt_file ~ca_file ~key_file ())
@@ -168,13 +174,9 @@ let () =
         let host = flag "--host" (required string) ~doc:" Hostname to connect to"
         and port =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
-        and cert = flag "--cert" (optional string) ~doc:" Path to the vertificate"
-        and cacert =
-          flag
-            "--cacert"
-            (optional string)
-            ~doc:" Path to the certificate to verify the peer"
-        and key = flag "--key" (optional string) ~doc:" Path to the key file"
+        and cert = cert_flag
+        and ca_cert = ca_cert_flag
+        and key =  key_flag
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
         and timeout =
@@ -188,7 +190,7 @@ let () =
             (optional_with_default (Time.Span.of_ms 500.) span_ms)
             ~doc:" Maximum time to wait for convergence"
         in
-        let ssl_config = maybe_construct_ssl_config cert cacert key in
+        let ssl_config = construct_ssl_config cert ca_cert key in
         fun () -> converge ~verbose ~ssl_config host port stack timeout poll])
   in
   let verify =
@@ -201,13 +203,9 @@ let () =
         let host = flag "--host" (required string) ~doc:" Hostname to connect to"
         and port =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
-        and cert = flag "--cert" (optional string) ~doc:" Path to the vertificate"
-        and cacert =
-          flag
-            "--cacert"
-            (optional string)
-            ~doc:" Path to the certificate to verify the peer"
-        and key = flag "--key" (optional string) ~doc:" Path to the key file"
+        and cert = cert_flag
+        and ca_cert = ca_cert_flag
+        and key =  key_flag
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
         and registry_access_tokens =
@@ -228,7 +226,7 @@ let () =
             (optional_with_default "docker-compose.yml" string)
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
-        let ssl_config = maybe_construct_ssl_config cert cacert key in
+        let ssl_config = construct_ssl_config cert ca_cert key in
         fun () ->
           verify
             ~insecure_registries
