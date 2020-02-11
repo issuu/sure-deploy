@@ -161,7 +161,7 @@ let construct_ssl_config cert cacert key =
 let verify_ssl_config ssl_config =
   match ssl_config with
   | None, None, None -> None
-  | _ -> Some (Deferred.Or_error.error_string "All the flags 'cert', 'cacert' an 'key' must be statisfied.")
+  | _ -> Some (Deferred.Or_error.error_string "All the flags 'cert', 'cacert' and 'key' must be specified.")
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
