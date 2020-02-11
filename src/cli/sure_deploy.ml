@@ -30,10 +30,12 @@ let environment () =
 let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
 let (cert_flag, ca_cert_flag, key_flag) =
-  Command.Param.(flag "--cert" (optional string) ~doc:" Path to the vertificate"),
-  Command.Param.(flag "--cacert" (optional string)
-            ~doc:" Path to the certificate to verify the peer"),
-  Command.Param.(flag "--key" (optional string) ~doc:" Path to the key file")
+  let open Command.Param in
+  flag "--cert" (optional string) ~doc:" Path to the vertificate",
+  flag "--cacert" (optional string)
+            ~doc:" Path to the certificate to verify the peer",
+  flag "--key" (optional string) ~doc:" Path to the key file"
+
 
 let converge ~verbose ~ssl_config host port stack timeout_seconds poll_interval =
   set_verbose verbose;
