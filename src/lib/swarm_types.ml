@@ -211,9 +211,10 @@ module Swarm : sig
 
   val of_host_and_port : ?ssl_config:SSLConfig.t -> string * int -> t
 
-  val uri : t -> string -> Uri.t
+  val make_uri : t -> ?userinfo:string ->  ?path:string -> ?query:(string * string list) list -> ?fragment:string -> unit -> Uri.t
 
-  val get : t -> Uri.t -> (Cohttp.Response.t * Cohttp_async.Body.t) Async_kernel.Deferred.t
+  val get : t -> ?interrupt:unit Async_kernel.Deferred.t -> ?headers:Cohttp.Header.t -> Uri.t -> (Cohttp.Response.t * Cohttp_async.Body.t) Async_kernel.Deferred.t
+
 end = struct
   type t = {
     ssl_config : SSLConfig.t option;
@@ -228,11 +229,11 @@ end = struct
   | None -> "http"
   | Some _ -> "https"
 
-  let uri t path =
-    Uri.make ~scheme:(get_swarm_scheme t.ssl_config) ~host:t.host ~port:t.port ~path ()
+  let make_uri t =
+    Uri.make ~scheme:(get_swarm_scheme t.ssl_config) ~host:t.host ~port:t.port
 
-  let get t uri =
-    Client.get ?ssl_config:t.ssl_config uri
+  let get t =
+    Client.get ?ssl_config:t.ssl_config
 end
 
 type service_name = Service.t
