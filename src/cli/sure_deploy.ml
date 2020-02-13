@@ -29,13 +29,11 @@ let environment () =
 
 let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
-let (cert_flag, ca_cert_flag, key_flag) =
+let cert_flag, ca_cert_flag, key_flag =
   let open Command.Param in
-  flag "--cert" (optional string) ~doc:" Path to the vertificate",
-  flag "--cacert" (optional string)
-            ~doc:" Path to the certificate to verify the peer",
-  flag "--key" (optional string) ~doc:" Path to the key file"
-
+  ( flag "--cert" (optional string) ~doc:" Path to the vertificate",
+    flag "--cacert" (optional string) ~doc:" Path to the certificate to verify the peer",
+    flag "--key" (optional string) ~doc:" Path to the key file" )
 
 let converge ~verbose ~ssl_config host port stack timeout_seconds poll_interval =
   set_verbose verbose;
@@ -161,7 +159,10 @@ let construct_ssl_config cert cacert key =
 let verify_ssl_config ssl_config =
   match ssl_config with
   | None, None, None -> None
-  | _ -> Some (Deferred.Or_error.error_string "All the flags 'cert', 'cacert' and 'key' must be specified.")
+  | _ ->
+      Some
+        (Deferred.Or_error.error_string
+           "All the flags 'cert', 'cacert' and 'key' must be specified.")
 
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
@@ -178,7 +179,7 @@ let () =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
         and cert = cert_flag
         and ca_cert = ca_cert_flag
-        and key =  key_flag
+        and key = key_flag
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
         and timeout =
@@ -193,11 +194,17 @@ let () =
             ~doc:" Maximum time to wait for convergence"
         in
         fun () ->
-        match verify_ssl_config (cert, ca_cert, key) with
-        | Some error ->  error
-        | None ->
-          converge ~verbose ~ssl_config:(construct_ssl_config cert ca_cert key) host port stack timeout poll])
-        
+          match verify_ssl_config (cert, ca_cert, key) with
+          | Some error -> error
+          | None ->
+              converge
+                ~verbose
+                ~ssl_config:(construct_ssl_config cert ca_cert key)
+                host
+                port
+                stack
+                timeout
+                poll])
   in
   let verify =
     Command.async_or_error
@@ -211,7 +218,7 @@ let () =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
         and cert = cert_flag
         and ca_cert = ca_cert_flag
-        and key =  key_flag
+        and key = key_flag
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
         and registry_access_tokens =
@@ -233,18 +240,18 @@ let () =
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
         fun () ->
-        match verify_ssl_config (cert, ca_cert, key) with
-        | Some error -> error
-        | None ->
-            verify
-              ~insecure_registries
-              ~registry_access_tokens
-              ~ssl_config:(construct_ssl_config cert ca_cert key)
-              ~verbose
-              host
-              port
-              stack
-              composefile])
+          match verify_ssl_config (cert, ca_cert, key) with
+          | Some error -> error
+          | None ->
+              verify
+                ~insecure_registries
+                ~registry_access_tokens
+                ~ssl_config:(construct_ssl_config cert ca_cert key)
+                ~verbose
+                host
+                port
+                stack
+                composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"

@@ -53,7 +53,12 @@ let services swarm stack =
   resp |> List.map ~f:fst
 
 let status swarm service_name =
-  let url = Swarm.make_uri swarm ~path:(Printf.sprintf "/%s/services/%a" api_version Service.pp service_name) () in
+  let url =
+    Swarm.make_uri
+      swarm
+      ~path:(Printf.sprintf "/%s/services/%a" api_version Service.pp service_name)
+      ()
+  in
   let%bind resp, body = Swarm.get swarm url in
   match Response.status resp |> Code.code_of_status with
   | 200 -> (
