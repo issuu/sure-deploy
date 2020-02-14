@@ -4,6 +4,7 @@ module Stack = Lib.Swarm_types.Stack
 module Swarm = Lib.Swarm_types.Swarm
 module Service = Lib.Swarm_types.Service
 module Image = Lib.Swarm_types.Image
+module SSLConfig = Conduit_async.V2.Ssl.Config
 
 let set_verbose verbose =
   Log.Global.set_level
@@ -28,9 +29,15 @@ let environment () =
 
 let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
-let converge ~verbose host port stack timeout_seconds poll_interval =
+let cert_flag, ca_cert_flag, key_flag =
+  let open Command.Param in
+  ( flag "--cert" (optional string) ~doc:" Path to the vertificate",
+    flag "--cacert" (optional string) ~doc:" Path to the certificate to verify the peer",
+    flag "--key" (optional string) ~doc:" Path to the key file" )
+
+let converge ~verbose ~ssl_config host port stack timeout_seconds poll_interval =
   set_verbose verbose;
-  let swarm = Swarm.of_host_and_port (host, port) in
+  let swarm = Swarm.of_host_and_port ?ssl_config (host, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
   let open Deferred.Or_error.Let_syntax in
   match%bind Lib.Requests.services swarm stack with
@@ -93,12 +100,12 @@ let is_insecure_registry image insecure_registries =
 let find_registry_access_token list image =
   List.Assoc.find ~equal:String.equal list (Image.registry_full image)
 
-let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
-    composefile
+let verify ~registry_access_tokens ~insecure_registries ~verbose ~ssl_config host port
+    stack composefile
   =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
-  let swarm = Swarm.of_host_and_port (host, port) in
+  let swarm = Swarm.of_host_and_port ?ssl_config (host, port) in
   let%bind env = Deferred.return @@ environment () in
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e
@@ -143,6 +150,20 @@ let verify ~registry_access_tokens ~insecure_registries ~verbose host port stack
       in
       return @@ Log.Global.info "Swarm state and composefile match"
 
+let construct_ssl_config cert cacert key =
+  match cert, cacert, key with
+  | Some crt_file, Some ca_file, Some key_file ->
+      Some (SSLConfig.create ~crt_file ~ca_file ~key_file ())
+  | _ -> None
+
+let verify_ssl_config ssl_config =
+  match ssl_config with
+  | None, None, None -> None
+  | _ ->
+      Some
+        (Deferred.Or_error.error_string
+           "All the flags 'cert', 'cacert' and 'key' must be specified.")
+
 let () =
   let stack_name = Command.Spec.Arg_type.create Stack.of_string in
   let span_ms =
@@ -156,6 +177,9 @@ let () =
         let host = flag "--host" (required string) ~doc:" Hostname to connect to"
         and port =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
+        and cert = cert_flag
+        and ca_cert = ca_cert_flag
+        and key = key_flag
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
         and timeout =
@@ -169,7 +193,18 @@ let () =
             (optional_with_default (Time.Span.of_ms 500.) span_ms)
             ~doc:" Maximum time to wait for convergence"
         in
-        fun () -> converge ~verbose host port stack timeout poll])
+        fun () ->
+          match verify_ssl_config (cert, ca_cert, key) with
+          | Some error -> error
+          | None ->
+              converge
+                ~verbose
+                ~ssl_config:(construct_ssl_config cert ca_cert key)
+                host
+                port
+                stack
+                timeout
+                poll])
   in
   let verify =
     Command.async_or_error
@@ -181,6 +216,9 @@ let () =
         let host = flag "--host" (required string) ~doc:" Hostname to connect to"
         and port =
           flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
+        and cert = cert_flag
+        and ca_cert = ca_cert_flag
+        and key = key_flag
         and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
         and stack = anon ("stack-name" %: stack_name)
         and registry_access_tokens =
@@ -202,14 +240,18 @@ let () =
             ~doc:" Compose file to read (default: docker-compose.yml)"
         in
         fun () ->
-          verify
-            ~insecure_registries
-            ~registry_access_tokens
-            ~verbose
-            host
-            port
-            stack
-            composefile])
+          match verify_ssl_config (cert, ca_cert, key) with
+          | Some error -> error
+          | None ->
+              verify
+                ~insecure_registries
+                ~registry_access_tokens
+                ~ssl_config:(construct_ssl_config cert ca_cert key)
+                ~verbose
+                host
+                port
+                stack
+                composefile])
   in
   Command.group
     ~summary:"Deployment helper for Docker Stack"
