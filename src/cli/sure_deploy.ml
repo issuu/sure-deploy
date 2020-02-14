@@ -29,6 +29,15 @@ let environment () =
 
 let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
+let host = Command.Param.(flag "--host" (required string) ~doc:" Hostname to connect to")
+
+let port =
+  Command.Param.(
+    flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to")
+
+let verbose =
+  Command.Param.(flag "--verbose" no_arg ~doc:" Display more status information")
+
 let cert_flag, ca_cert_flag, key_flag =
   let open Command.Param in
   ( flag "--cert" (optional string) ~doc:" Path to the vertificate",
@@ -174,13 +183,12 @@ let () =
       ~summary:"Wait for convergence of stack deployment on Docker Swarm"
       (let open Command.Let_syntax in
       [%map_open
-        let host = flag "--host" (required string) ~doc:" Hostname to connect to"
-        and port =
-          flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
+        let host = host
+        and port = port
         and cert = cert_flag
         and ca_cert = ca_cert_flag
         and key = key_flag
-        and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
+        and verbose = verbose
         and stack = anon ("stack-name" %: stack_name)
         and timeout =
           flag
@@ -213,13 +221,12 @@ let () =
          definitions"
       (let open Command.Let_syntax in
       [%map_open
-        let host = flag "--host" (required string) ~doc:" Hostname to connect to"
-        and port =
-          flag "--port" (optional_with_default 2375 int) ~doc:" Port to connect to"
+        let host = host
+        and port = port
         and cert = cert_flag
         and ca_cert = ca_cert_flag
         and key = key_flag
-        and verbose = flag "--verbose" no_arg ~doc:" Display more status information"
+        and verbose = verbose
         and stack = anon ("stack-name" %: stack_name)
         and registry_access_tokens =
           flag
