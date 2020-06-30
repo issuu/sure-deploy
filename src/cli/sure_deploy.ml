@@ -29,7 +29,12 @@ let environment () =
 
 let registry_access_value = Command.Arg_type.create (String.lsplit2_exn ~on:'=')
 
-let host = Command.Param.(flag "--host" (required string) ~doc:" Hostname to connect to")
+let host_type = Command.Arg_type.create (fun s -> Swarm.Host s)
+
+let socket_type = Command.Arg_type.create (fun s -> Swarm.Socket s)
+
+let host =
+  Command.Param.(flag "--host" (optional host_type) ~doc:" Hostname to connect to")
 
 let port =
   Command.Param.(
@@ -38,15 +43,21 @@ let port =
 let verbose =
   Command.Param.(flag "--verbose" no_arg ~doc:" Display more status information")
 
+let domain_socket =
+  Command.Param.(
+    flag "--socket" (optional socket_type) ~doc:" Unix domain socket to connect to")
+
+let destination = Command.Param.choose_one [host; domain_socket] ~if_nothing_chosen:Raise
+
 let cert_flag, ca_cert_flag, key_flag =
   let open Command.Param in
   ( flag "--cert" (optional string) ~doc:" Path to the vertificate",
     flag "--cacert" (optional string) ~doc:" Path to the certificate to verify the peer",
     flag "--key" (optional string) ~doc:" Path to the key file" )
 
-let converge ~verbose ~ssl_config host port stack timeout_seconds poll_interval =
+let converge ~verbose ~ssl_config destination port stack timeout_seconds poll_interval =
   set_verbose verbose;
-  let swarm = Swarm.of_host_and_port ?ssl_config (host, port) in
+  let swarm = Swarm.of_destination_and_port ?ssl_config (destination, port) in
   let timeout = Time.Span.of_sec timeout_seconds in
   let open Deferred.Or_error.Let_syntax in
   match%bind Lib.Requests.services swarm stack with
@@ -109,12 +120,12 @@ let is_insecure_registry image insecure_registries =
 let find_registry_access_token list image =
   List.Assoc.find ~equal:String.equal list (Image.registry_full image)
 
-let verify ~registry_access_tokens ~insecure_registries ~verbose ~ssl_config host port
-    stack composefile
+let verify ~registry_access_tokens ~insecure_registries ~verbose ~ssl_config destination
+    port stack composefile
   =
   let open Deferred.Or_error.Let_syntax in
   set_verbose verbose;
-  let swarm = Swarm.of_host_and_port ?ssl_config (host, port) in
+  let swarm = Swarm.of_destination_and_port ?ssl_config (destination, port) in
   let%bind env = Deferred.return @@ environment () in
   match Lib.Composefile.load composefile env with
   | Error _ as e -> Deferred.return e
@@ -183,7 +194,7 @@ let () =
       ~summary:"Wait for convergence of stack deployment on Docker Swarm"
       (let open Command.Let_syntax in
       [%map_open
-        let host = host
+        let destination = destination
         and port = port
         and cert = cert_flag
         and ca_cert = ca_cert_flag
@@ -208,7 +219,7 @@ let () =
               converge
                 ~verbose
                 ~ssl_config:(construct_ssl_config cert ca_cert key)
-                host
+                destination
                 port
                 stack
                 timeout
@@ -221,7 +232,7 @@ let () =
          definitions"
       (let open Command.Let_syntax in
       [%map_open
-        let host = host
+        let host = destination
         and port = port
         and cert = cert_flag
         and ca_cert = ca_cert_flag
