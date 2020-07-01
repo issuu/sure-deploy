@@ -209,7 +209,11 @@ end
 module Swarm : sig
   type t
 
-  val of_host_and_port : ?ssl_config:SSLConfig.t -> string * int -> t
+  type destination =
+    | Host of string
+    | Socket of string
+
+  val of_destination_and_port : ?ssl_config:SSLConfig.t -> destination * int -> t
 
   val make_uri
     :  t ->
@@ -227,20 +231,39 @@ module Swarm : sig
     Uri.t ->
     (Cohttp.Response.t * Cohttp_async.Body.t) Async_kernel.Deferred.t
 end = struct
+  type destination =
+    | Host of string
+    | Socket of string
+
   type t = {
     ssl_config : SSLConfig.t option;
-    host : string;
+    destination : destination;
     port : int;
   }
 
-  let of_host_and_port ?ssl_config (host, port) = {ssl_config; host; port}
+  let of_destination_and_port ?ssl_config (destination, port) =
+    {ssl_config; destination; port}
 
-  let get_swarm_scheme = function
-    | None -> "http"
-    | Some _ -> "https"
+  let get_swarm_scheme destination ssl_config =
+    match destination, ssl_config with
+    | Socket _, _ -> "httpunix"
+    | Host _, None -> "http"
+    | Host _, Some _ -> "https"
+
+  let get_swarm_host = function
+    | Host h -> h
+    | Socket s -> s
 
   let make_uri t =
-    Uri.make ~scheme:(get_swarm_scheme t.ssl_config) ~host:t.host ~port:t.port
+    let port =
+      match t.destination with
+      | Socket _ -> None
+      | Host _ -> Some t.port
+    in
+    Uri.make
+      ~scheme:(get_swarm_scheme t.destination t.ssl_config)
+      ~host:(get_swarm_host t.destination)
+      ?port
 
   let get t = Client.get ?ssl_config:t.ssl_config
 end
