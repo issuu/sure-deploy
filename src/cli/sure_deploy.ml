@@ -232,7 +232,7 @@ let () =
          definitions"
       (let open Command.Let_syntax in
       [%map_open
-        let host = destination
+        let destination = destination
         and port = port
         and cert = cert_flag
         and ca_cert = ca_cert_flag
@@ -266,7 +266,7 @@ let () =
                 ~registry_access_tokens
                 ~ssl_config:(construct_ssl_config cert ca_cert key)
                 ~verbose
-                host
+                destination
                 port
                 stack
                 composefile])
